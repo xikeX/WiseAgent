@@ -1,0 +1,62 @@
+# .gitignore
+
+# Byte-compiled / optimized / DLL files
+*.pyc
+*.pyo
+*.pyd
+__pycache__
+
+# Distribution / deployment artifacts
+dist/
+build/
+*.egg-info/
+
+# PyInstaller creates a temporary folder and scripts (*.spec)
+%TEMP%/
+tmp/
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+hypothesis/
+.pytest_cache/
+
+# Static analysis
+*.pyre
+
+# Python 3.8+ virtual environment (https://docs.python.org/3/library/venv.html)
+venv/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pytest cache
+*.pytest_cache
+
+# Sphinx documentation
+docs/_build/
+
+# IPython
+ipython_config.py
+
+# pipenv
+# See: https://pipenv.kennethreitz.org/en/latest/basics/#virtualenvs
+.pipenv
+.pipenv.lock
+
+# mypy
+.mypy_cache/
+
+# temp file
+./tmp
+
+# log
+./logs

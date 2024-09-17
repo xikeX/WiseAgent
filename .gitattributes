@@ -1,0 +1,28 @@
+# .gitattributes
+
+# Set default text filters to handle line endings properly
+* text=auto
+
+# Exclude binary files from text conversion
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.mp3 binary
+*.mp4 binary
+*.pdf binary
+*.zip binary
+*.tar.gz binary
+*.so binary
+*.dylib binary
+*.dll binary
+*.exe binary
+
+# Specify that Markdown files should be treated as text files
+*.md text=auto
+
+# Set executable permissions for shell scripts
+*.sh -text exec
+
+# Specify that Python files should not have their line endings normalized
+*.py -text

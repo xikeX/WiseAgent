@@ -1,0 +1,3 @@
+from base_perceptron import BasePerceptron
+from network_perceptron import NetworkPerceptron
+from text_perceptron import TextPerceptron
