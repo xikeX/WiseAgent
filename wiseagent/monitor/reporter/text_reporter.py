@@ -1,11 +1,12 @@
 from wiseagent.agent_data.base_agent_data import AgentData
+from wiseagent.common.message import ReportMessage
 from wiseagent.monitor.reporter.base_reporter import BaseReporter
 
 
-class SingleAgentReport(BaseReporter):
-    name = "single_agent_report"
-    
-    def report(self, agentdata: AgentData, report_type, report_data)-> bool:
+class TextReporter(BaseReporter):
+    name = "text_reporter"
+    map_key_word = ["text"]
+    def report(self, agentdata: AgentData, report_message:ReportMessage)-> bool:
         """ the single agent report will report the message to the website.
         Args:
             agentdata (AgentData): the agent data to report
@@ -14,5 +15,5 @@ class SingleAgentReport(BaseReporter):
         """
         # TODO: implement the report function
         print("Reporting to website")
-        print(f"{report_type}: {report_data}")
+        print(f"{report_message.report_type}: {report_message.report_data}")
         return True

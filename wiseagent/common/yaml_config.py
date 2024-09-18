@@ -1,3 +1,10 @@
+'''
+Author: Huang Weitao
+Date: 2024-09-17 16:08:42
+LastEditors: Huang Weitao
+LastEditTime: 2024-09-18 23:38:23
+Description: 
+'''
 from pathlib import Path
 from typing import Dict
 
@@ -16,7 +23,8 @@ class YamlConfig:
 
     @classmethod
     def from_yaml_file(cls, file_path: Path) -> "YamlConfig":
-        return cls(**cls.read_yaml(file_path))
+        parameter = cls.read_yaml(file_path)
+        return cls(**parameter)
 
     @classmethod
     def to_yaml_file(self, file_path: Path, encoding: str = "utf-8") -> None:

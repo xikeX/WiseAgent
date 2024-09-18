@@ -1,0 +1,3 @@
+name : "Text_receiver"
+receive_ability :
+  - "NetworkPerceptron"

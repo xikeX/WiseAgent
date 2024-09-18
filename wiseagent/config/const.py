@@ -11,5 +11,5 @@ from pathlib import Path
 # 获取当前文件的绝对路径
 current_file_abs_path = os.path.abspath(__file__)
 
-ROOT_PATH = Path(current_file_abs_path).parent.parent.parent
+ROOT_PATH = Path(current_file_abs_path).parent.parent
 CONFIG_PATH = ROOT_PATH / 'config'

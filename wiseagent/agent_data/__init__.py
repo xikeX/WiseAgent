@@ -1,1 +1,1 @@
-from base_agent_data import AgentData
+from wiseagent.agent_data.base_agent_data import AgentData

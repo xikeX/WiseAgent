@@ -2,3 +2,4 @@
 perceptron_model_path:
   - "wiseagent.receiver.perceptron.text_perceptron"
   - "wiseagent.receiver.perceptron.text_perceptron"
+base_receiver_model_path: "wiseagent.receiver.base_receiver"
