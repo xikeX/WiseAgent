@@ -2,17 +2,21 @@
 Author: Huang Weitao
 Date: 2024-09-17 16:06:02
 LastEditors: Huang Weitao
-LastEditTime: 2024-09-18 23:41:02
+LastEditTime: 2024-09-19 22:12:03
 Description: 
 '''
 
+from typing import List
 from pydantic import BaseModel
 from wiseagent.common.yaml_config import YamlConfig
 from wiseagent.config import CONFIG_PATH
 
 class GlobalConfig(BaseModel,YamlConfig):
-    perceptron_model_path:list[str]=None
-    base_receiver_model_path:str = ""
+    perceptron_module_path:List[str]=None
+    base_receiver_module_path:str = ""
+    
+    reporter_module_path:List[str]=None
+    base_monitor_module_path:str = ""
     @classmethod
     def default(cls):
         config_file_path = CONFIG_PATH/'global_config.yaml'

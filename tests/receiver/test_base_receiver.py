@@ -2,12 +2,13 @@
 Author: Huang Weitao
 Date: 2024-09-18 22:31:33
 LastEditors: Huang Weitao
-LastEditTime: 2024-09-18 23:45:14
+LastEditTime: 2024-09-19 00:20:17
 Description: 
 '''
 import os
+import time
 from wiseagent.agent_data.base_agent_data import AgentData
-from wiseagent.common.message import Message, ReceiveMessage
+from wiseagent.protocol.message import Message, ReceiveMessage
 from wiseagent.core.agent_core import get_agent_core
 from wiseagent.receiver.base_receiver import BaseReceiver
 # get the current folder of the file
@@ -18,9 +19,8 @@ text_receiver_config_file = os.path.join(current_folder, "text_receiver.yaml")
 
 def test_main():
     agent_core = get_agent_core()
-    agent_core._init_receiver()
+    agent_core._init_monitor()
     assert agent_core.receiver is not None, ""
-    agent_core.start_pre_function()
     receiver = BaseReceiver()
     assert receiver == agent_core.receiver, ""
     # Add AgentData to agent_core
@@ -30,13 +30,14 @@ def test_main():
     agent_core.init_agent_data(all_receiver_agent_data)
     agent_core.init_agent_data(network_receiver_agent_data)
     agent_core.init_agent_data(text_receiver_agent_data)
+    agent_core.start_pre_function()
     text_message = ReceiveMessage(
-        send_from = "User", send_to = "Text_receiver", receive_type = "text",
+        send_from = "User", send_to = "Text_receiver", receiver_type = "Text",
         content = "Hello, Text_receiver!",type = "text", timestamp = "2023-10-01 12:00:00")
     receiver.add_message(text_message)
     
     network_message = ReceiveMessage(
-        send_from = "User", send_to = "Network_receiver", receive_type = "network",
+        send_from = "User", send_to = "Network_receiver", receiver_type = "Network",
         content = "Hello, network_message!",type = "network", timestamp = "2023-10-01 12:00:00")
     receiver.add_message(network_message)
     
@@ -45,8 +46,10 @@ def test_main():
     receiver.add_message([network_message,text_message])
     
     normal_message = Message(
-        send_from = "User", send_to = "Network_receiver", receive_type = "network",
+        send_from = "User", send_to = "Network_receiver", receiver_type = "Network",
         content = "Hello, network_message!",type = "network", timestamp = "2023-10-01 12:00:00")
     receiver.add_message(normal_message)
+    while True:
+        time.sleep(1)
 if __name__ == "__main__":
     test_main()

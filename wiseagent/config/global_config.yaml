@@ -1,5 +1,11 @@
 # receiver will use the perceptron model path to register the perceptron 
-perceptron_model_path:
-  - "wiseagent.receiver.perceptron.text_perceptron"
-  - "wiseagent.receiver.perceptron.text_perceptron"
 base_receiver_model_path: "wiseagent.receiver.base_receiver"
+perceptron_module_path:
+  - "wiseagent.receiver.perceptron.text_perceptron"
+  - "wiseagent.receiver.perceptron.text_perceptron"
+
+# Monitor Cofig
+base_monitor_module_path: "wiseagent.monitor.monitor"
+reporter_module_path:
+  - "wiseagent.monitor.reporter.text_reporter"
+

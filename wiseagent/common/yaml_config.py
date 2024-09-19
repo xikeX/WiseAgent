@@ -2,11 +2,11 @@
 Author: Huang Weitao
 Date: 2024-09-17 16:08:42
 LastEditors: Huang Weitao
-LastEditTime: 2024-09-18 23:38:23
+LastEditTime: 2024-09-19 00:02:58
 Description: 
 '''
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Union
 
 import yaml
 
@@ -14,8 +14,10 @@ import yaml
 class YamlConfig:
     _default_path = ""
     @classmethod
-    def read_yaml(cls, file_path: Path, encoding: str = "utf-8") -> Dict:
+    def read_yaml(cls, file_path: Union[Path,str], encoding: str = "utf-8") -> Dict:
         """Read yaml file and return a dict"""
+        if isinstance(file_path, str):
+            file_path = Path(file_path)
         if not file_path.exists():
             return {}
         with open(file_path, "r", encoding=encoding) as file:

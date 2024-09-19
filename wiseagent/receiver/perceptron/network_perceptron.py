@@ -1,7 +1,7 @@
 from wiseagent.common.annotation import singleton
 from wiseagent.receiver.perceptron import BasePerceptron
 from wiseagent.agent_data.base_agent_data import AgentData
-from wiseagent.common.message import Message
+from wiseagent.protocol.message import Message
 from wiseagent.config import logger
 @singleton
 class NetworkPerceptron(BasePerceptron):
@@ -10,7 +10,7 @@ class NetworkPerceptron(BasePerceptron):
     cause_by: str = "Network"
     map_key_words: dict = {"Network"}
     
-    async def handle_message(self, data: AgentData,msg:Message):
+    def handle_message(self, data: AgentData,msg:Message):
         # Add the received message to the short-term memory
         with data.short_term_memory_lock:
             data.short_term_memory.append(msg)

@@ -2,7 +2,7 @@
 Author: Huang Weitao
 Date: 2024-09-17 15:38:38
 LastEditors: Huang Weitao
-LastEditTime: 2024-09-18 23:52:14
+LastEditTime: 2024-09-19 00:21:38
 Description: 
 '''
 
@@ -17,6 +17,6 @@ class BasePerceptron(BaseModel,ABC):
     cause_by: str = None
     map_key_words: dict = {}
     @abstractmethod
-    async def handle_message(self, data: AgentData,msg:AgentData):
+    def handle_message(self, data: AgentData,msg:AgentData):
         raise NotImplementedError("receiver method not implemented")
     

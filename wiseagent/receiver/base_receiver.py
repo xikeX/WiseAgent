@@ -2,7 +2,7 @@
 Author: Huang Weitao
 Date: 2024-09-17 14:24:14
 LastEditors: Huang Weitao
-LastEditTime: 2024-09-18 23:53:08
+LastEditTime: 2024-09-19 23:39:54
 Description: 
 '''
 import importlib
@@ -11,12 +11,14 @@ import queue
 import threading
 from typing import ClassVar, List
 from pydantic import BaseModel
-from wiseagent.common.message import ReceiveMessage
+from wiseagent.common.annotation import singleton
+from wiseagent.protocol.message import ReceiveMessage
 from wiseagent.core.agent_core import AgentCore,get_agent_core
 from wiseagent.receiver.perceptron import BasePerceptron
 from wiseagent.config import GLOBAL_CONFIG,logger
 from wiseagent.agent_data import AgentData
 
+@singleton
 class BaseReceiver(BaseModel):
     """Base class for receivers."""
     class Config:
@@ -25,22 +27,22 @@ class BaseReceiver(BaseModel):
     # All the perceptron model. For difference agent, will use different perceptron model according to the Agent Data
     perceptron_list:list[BasePerceptron]=[]
     # cache
-    message_queue = queue.Queue()
+    message_queue:queue.Queue = queue.Queue()
     receive_thread:threading.Thread = None
     def __init__(self):
         super().__init__()
         # init the perceptron model use global config
-        for perceptron_model_path in GLOBAL_CONFIG.perceptron_model_path:
-            # register the perecptron model
-            import_module = importlib.import_module(perceptron_model_path)
+        for perceptron_module_path in GLOBAL_CONFIG.perceptron_module_path:
+            # register the perecptron Module
+            import_module = importlib.import_module(perceptron_module_path)
             if not hasattr(import_module, 'get_perceptron') and not callable(getattr(import_module, 'get_perceptron')):
-                raise Exception(f"Perceptron model {perceptron_model_path} does not have a get_perceptron method")
+                raise Exception(f"Perceptron Module {perceptron_module_path} does not have a get_perceptron method")
             perceptron = import_module.get_perceptron()
             if perceptron not in self.perceptron_list:
                 self.perceptron_list.append(perceptron)
 
     def add_message(self,message:list[ReceiveMessage]):
-        if not isinstance(message,ReceiveMessage):
+        if not isinstance(message,list):
             message = [message]
         for m in message:
             if not isinstance(m,ReceiveMessage):
@@ -61,7 +63,7 @@ class BaseReceiver(BaseModel):
             except queue.Empty:
                 continue
             receive_agent = None
-            for agent in agent_core.agent_list.index():
+            for agent in agent_core.agent_list:
                 if message.send_to == agent.name or message.send_to == "all":
                     receive_agent = agent
                     break
@@ -73,8 +75,9 @@ class BaseReceiver(BaseModel):
     def handle_message(self,agentdata:AgentData,message:ReceiveMessage):
         for perceptron in self.perceptron_list:
             if perceptron.name in agentdata.receive_ability and\
-                any([key_word == message.receive_type for key_word in perceptron.key_word_list]):
+                any([key_word == message.receiver_type for key_word in perceptron.map_key_words]):
                 perceptron.handle_message(agentdata,message)
+                break
 
     def run_receive_thread(self)->bool:
         # check if the thread is running
@@ -82,7 +85,7 @@ class BaseReceiver(BaseModel):
             return True
         # create or continue a thread to receive message
         try:
-            self.receive_thread = self.receive_thread|threading.Thread(target=self._receive, args=(get_agent_core(),))
+            self.receive_thread = self.receive_thread or threading.Thread(target=self._receive, args=(get_agent_core(),))
             self.receive_thread.start()
             return True
         except Exception as e:
@@ -93,5 +96,5 @@ class BaseReceiver(BaseModel):
 def register(agent_core:"AgentCore"):
     """Register the receiver to the agent core."""
     agent_core.receiver = BaseReceiver()
-    agent_core.start_function_list.append(agent_core.receiver.run_receive)
+    agent_core.start_function_list.append(agent_core.receiver.run_receive_thread)
         
