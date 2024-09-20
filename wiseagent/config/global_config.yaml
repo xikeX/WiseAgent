@@ -9,3 +9,9 @@ base_monitor_module_path: "wiseagent.monitor.monitor"
 reporter_module_path:
   - "wiseagent.monitor.reporter.text_reporter"
 
+# Life Schedule
+life_schedule_path:
+  - "wiseagent.life_manager.life_scheduler.autostart_life_scheduler"
+  - "wiseagent.life_manager.life_scheduler.human_life_scheduler"
+  - "wiseagent.life_manager.life_scheduler.react_life_scheduler"
+
