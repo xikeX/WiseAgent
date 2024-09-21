@@ -2,7 +2,7 @@
 Author: Huang Weitao
 Date: 2024-09-17 16:06:02
 LastEditors: Huang Weitao
-LastEditTime: 2024-09-20 22:54:09
+LastEditTime: 2024-09-21 12:26:23
 Description: 
 """
 
@@ -20,6 +20,9 @@ class GlobalConfig(BaseModel, YamlConfig):
 
     reporter_module_path: List[str] = None
     base_monitor_module_path: str = ""
+
+    life_scheduler_module_path: List[str] = None
+    life_manager_module_path: str = ""
 
     @classmethod
     def default(cls):

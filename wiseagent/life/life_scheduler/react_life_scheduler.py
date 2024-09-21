@@ -1,5 +1,12 @@
 """
 Author: Huang Weitao
+Date: 2024-09-21 02:48:15
+LastEditors: Huang Weitao
+LastEditTime: 2024-09-21 12:41:54
+Description: 
+"""
+"""
+Author: Huang Weitao
 Date: 2024-09-19 23:53:17
 LastEditors: Huang Weitao
 LastEditTime: 2024-09-21 02:36:10
@@ -12,7 +19,7 @@ from typing import List
 from pydantic import BaseModel
 
 from wiseagent.action.plan_action import PlanAction
-from wiseagent.agent_data.base_agent_data import AgentData
+from wiseagent.agent_data.base_agent_data import AgentData, get_current_agent_data
 from wiseagent.common.annotation import singleton
 from wiseagent.config import logger
 from wiseagent.core.agent_core import get_agent_core
@@ -23,11 +30,9 @@ from wiseagent.protocol.action_command import ActionCommand
 class ReActLifeSchedule(BaseModel):
     name: str = "ReActLifeSchedule"
 
-    def __init__(self, life_manager):
-        self.life_manager = life_manager
-
-    def life(self, agent_data: AgentData):
-        self.react(agent_data)
+    def life(self):
+        agent_data = get_current_agent_data()
+        self.human_life(agent_data)
 
     def react(self, agent_data: "AgentData"):
         agent_core = get_agent_core(agent_data)
@@ -55,7 +60,7 @@ class ReActLifeSchedule(BaseModel):
                 rsp = plan_action.plan(agent_data, command_list)
                 thought = rsp["thought"]
                 command_list = rsp["command_list"]
-                agent_data.add_short_term_memory(thought)
+                agent_data.add_memory(thought)
             # Act/ReAct
             command: ActionCommand
             for command in command_list:
@@ -66,7 +71,7 @@ class ReActLifeSchedule(BaseModel):
                     # current_action.action_method(self,agent_data,command.params)
                     method = current_action.get_method(action.action_method)
                     rsp = method(agent_data, **command.parameters)
-                agent_core.add_short_term_memory(rsp)
+                agent_core.add_memory(rsp)
                 # After executed the action, if the agent is dead, then break the loop
 
 

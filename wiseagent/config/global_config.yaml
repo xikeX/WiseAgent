@@ -10,8 +10,15 @@ reporter_module_path:
   - "wiseagent.monitor.reporter.text_reporter"
 
 # Life Schedule
-life_schedule_path:
-  - "wiseagent.life_manager.life_scheduler.autostart_life_scheduler"
-  - "wiseagent.life_manager.life_scheduler.human_life_scheduler"
-  - "wiseagent.life_manager.life_scheduler.react_life_scheduler"
+life_module_path: "wiseagent.life.life"
+life_schedule_module_path:
+  - "wiseagent.life.life_scheduler.autostart_life_scheduler"
+  - "wiseagent.life.life_scheduler.human_life_scheduler"
+  - "wiseagent.life.life_scheduler.react_life_scheduler"
 
+action_manager_module_path:"wiseagent.action.action_manager"
+action_module_path:
+  # plan action
+  - "wiseagent.action.plan_action"
+  # memory action
+  - "wiseagent.action.memory_action"

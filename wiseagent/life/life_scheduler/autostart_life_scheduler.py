@@ -2,10 +2,10 @@ import time
 from typing import List
 
 from wiseagent.action.base_action import BaseAction
-from wiseagent.agent_data.base_agent_data import AgentData
+from wiseagent.agent_data.base_agent_data import AgentData, get_current_agent_data
 from wiseagent.common.annotation import singleton
 from wiseagent.core.agent_core import get_agent_core
-from wiseagent.life_manager.life_scheduler.base_life_scheduler import BaseLifeScheduler
+from wiseagent.life.life_scheduler.base_life_scheduler import BaseLifeScheduler
 from wiseagent.protocol.action_command import ActionCommand
 
 
@@ -16,8 +16,9 @@ class AutoStartLifeScheduler(BaseLifeScheduler):
     def __init__(self, life_scheduler):
         self.life_scheduler = life_scheduler
 
-    def life(self, agent_data: "AgentData"):
-        self.auto_start_mode(agent_data)
+    def life(self):
+        agent_data = get_current_agent_data()
+        self.human_life(agent_data)
 
     def auto_start_mode(self, agent_data: "AgentData"):
         agent_core = get_agent_core()
@@ -35,7 +36,7 @@ class AutoStartLifeScheduler(BaseLifeScheduler):
             rsp = ""
             for action in action_list:
                 rsp += action.check_start(agent_data, command_list=command_list)
-            agent_data.add_short_term_memory(rsp)
+            agent_data.add_memory(rsp)
             # Act
             for command in command_list:
                 action = agent_core.get_action(command.action_name)
@@ -44,7 +45,7 @@ class AutoStartLifeScheduler(BaseLifeScheduler):
                     rsp = action_method(agent_data, command)
                 else:
                     rsp = f"{command.action_method} not found"
-                agent_data.add_short_term_memory(command.action_name, rsp)
+                agent_data.add_memory(command.action_name, rsp)
 
 
 def get_life_scheduler():

@@ -59,4 +59,4 @@ ipython_config.py
 ./tmp
 
 # log
-./logs
+logs/

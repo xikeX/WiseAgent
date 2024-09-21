@@ -1,3 +1,10 @@
+"""
+Author: Huang Weitao
+Date: 2024-09-21 02:48:15
+LastEditors: Huang Weitao
+LastEditTime: 2024-09-21 11:08:47
+Description: 
+"""
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
@@ -7,14 +14,13 @@ from wiseagent.agent_data.base_agent_data import AgentData
 from wiseagent.core.agent_core import AgentCore
 
 
-class PlanAction(BaseModel, ABC):
+class BasePlanAction(BaseModel, ABC):
     """Base class for all plan actions"""
 
     @abstractmethod
-    def plan(self, agentData: "AgentData", **kwargs) -> Dict:
+    def plan(self, **kwargs) -> Dict:
         """Execute the plan action
         Args:
-            agentData (AgentData): The agent data, which include the hole information of the agent
             **kwargs: Additional arguments, which can be used by the plan action
 
         Returns:
