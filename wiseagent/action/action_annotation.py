@@ -14,21 +14,26 @@ NOTE:
 
 import functools
 
+from wiseagent.agent_data.base_agent_data import get_current_agent_data
+
 
 def action(use_knowledge=False):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            # 在这里可以添加一些预处理逻辑
+            if use_knowledge:
+                # set the action knowledge
+                current_agent_data = get_current_agent_data()
+                current_agent_data.set_action_knowledge()
+            # call the action function
             result = func(*args, **kwargs)
-            # 在这里可以添加一些后处理逻辑
+            if use_knowledge:
+                # clean the action knowledge
+                current_agent_data.set_action()
             return result
 
         # 将自定义属性添加到 wrapper 上
         wrapper.action = True
-
-        # 将自定义属性复制到原始函数上
-        setattr(func, "use_knowledge", use_knowledge)
 
         return wrapper
 

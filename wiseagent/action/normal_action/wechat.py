@@ -1,0 +1,148 @@
+import time
+from typing import Any
+
+from wxauto import WeChat
+
+from wiseagent.action.action_annotation import action
+from wiseagent.action.base import BaseAction, BaseActionData
+from wiseagent.agent_data.base_agent_data import AgentData, get_current_agent_data
+from wiseagent.common.annotation import singleton
+
+wechat = None
+
+
+class WeChatActionData(BaseActionData):
+    wechat_handle: Any = None
+
+
+@singleton
+class WeChatAction(BaseAction):
+    """This is ActionCass to do wechat action, all the action will be play in Wechat Application"""
+
+    name: str = "WeChatAction"
+    action_description: str = " this class is to do wechat action."
+
+    def init_agent(self, agent_data: AgentData):
+        agent_data.set_action_data(self.name, WeChatActionData())
+        global wechat
+        # will init the wechat in main thread
+        if wechat is None:
+            wechat = WeChat()
+
+    def get_wechat_handle(self, agent_data: AgentData):
+        wechat_action_data = agent_data.get_action_data(self.name)
+        if wechat_action_data.wechat_handle is None:
+            wechat_action_data.wechat_handle = wechat
+        return wechat_action_data.wechat_handle
+
+    # NOTE: get_wachat_friend_list is not necessary.
+    # @action()
+    # def get_wachat_friend_list(self):
+    #     """get the friend list in wechat"""
+    #     agent_data = get_current_agent_data()
+    #     wechat:WeChat = self.get_wechat_handle(agent_data)
+    #     friend_list = wechat.GetAllFriends()
+    #     friend_desciption = ""
+    #     for index,friend in enumerate(friend_list):
+    #         friend_desciption += f"{index+1} friend name: \"{friend['nickname']}\" remark:\" {friend['remark']}\"\n"
+    #     return friend_desciption
+
+    @action()
+    def get_chat_history(self, friend_name: str):
+        """get the chat history with friend
+
+        Args:
+            friend_name (str): the friend name you want to get chat history. you must confirm the friend name is in your friend list.
+        """
+        agent_data = get_current_agent_data()
+        wechat: WeChat = self.get_wechat_handle(agent_data)
+        # switch to chat page
+        wechat.ChatWith(friend_name)
+        chat_history = wechat.GetAllMessage()
+        message_description = ""
+        for msg in chat_history:
+            if msg[0] == "Time":
+                continue
+            msg[0] == "Me" if msg[0] == "self" else msg[0]
+            message_description += f"{msg[0]}: {msg[1]}\n"
+        return message_description
+
+    @action()
+    def send_wechat_message(self, message: str, friend_name: str):
+        """send message to friend
+
+        Args:
+            message (str): the message you want to send. you can use \n to split the message.
+            friend_name (str): the friend name you want to send message. you must confirm the friend name is in your friend list.
+        """
+        agent_data = get_current_agent_data()
+        wechat: WeChat = self.get_wechat_handle(agent_data)
+        wechat.SendMsg(message, friend_name)
+        return f"{friend_name} has received the message and think is ok. DO NOT send the same message again."
+
+    @action()
+    def send_wechat_image(self, image_path: str, friend_name: str):
+        """send image to friend.
+
+        Args:
+            image_path (str): the image path you want to send. you must confirm the image path is exist.
+            friend_name (str): the friend name you want to send image. you must confirm the friend name is in your friend list.
+        """
+        agent_data = get_current_agent_data()
+        wechat: WeChat = self.get_wechat_handle(agent_data)
+        wechat.SendFiles(image_path, friend_name)
+        return f"{friend_name} has received the image and think is ok. DO NOT send the same image again."
+
+    @action()
+    def send_wechat_file(self, image_path: str, friend_name: str):
+        """send file to friend.
+
+        Args:
+            image_path (str): the file path you want to send. you must confirm the file path is exist.
+            friend_name (str): the friend name you want to send file. you must confirm the friend name is in your friend list.
+        """
+        agent_data = get_current_agent_data()
+        wechat: WeChat = self.get_wechat_handle(agent_data)
+        wechat.SendFiles(image_path, friend_name)
+        return f"{friend_name} has received the file and think is ok. DO NOT send the same file again."
+
+    @action()
+    def add_friend_to_listen_list(self, friend_name: str):
+        """add friend to listen list
+
+        Args:
+            friend_name (str): the friend name you want to add to listen list. you must confirm the friend name is in your friend list.
+        """
+        agent_data = get_current_agent_data()
+        wechat: WeChat = self.get_wechat_handle(agent_data)
+        wechat.AddListenChat(friend_name)
+        return f"Add {friend_name} to listen list successfully. {friend_name} is in the listen list now. DO NOT add the same friend again."
+
+    @action()
+    def listen_for_new_wechat_message(self, friend_name: str = None, timeout=120):
+        """listen for new wechat message
+
+        Args:
+            friend_name (str): the friend name you want to listen for new message. you must confirm the friend name is in your friend list. If you want to listen for all the new message, you can set the friend_name to None.
+        """
+        agent_data = get_current_agent_data()
+        wechat: WeChat = self.get_wechat_handle(agent_data)
+        wechat.AddListenChat(friend_name)
+        wait = 0
+        while wait < timeout:
+            msg = wechat.GetListenMessage()
+            if len(msg) > 0:
+                break
+            time.sleep(1)
+            wait += 1
+        if len(msg) == 0:
+            return "No new message"
+        msg_desciption = ""
+        for name in msg.keys():
+            content = msg[name]
+            msg_desciption += f"{name}: {content}\n"
+        return "Received new message: " + msg_desciption
+
+
+def get_action():
+    return WeChatAction()

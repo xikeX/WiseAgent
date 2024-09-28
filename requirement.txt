@@ -1,2 +1,10 @@
 xmltodict
 pydantic
+loguru
+multidict
+openai
+dashscope
+
+
+# WeChat Ation
+wxauto 

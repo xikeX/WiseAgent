@@ -7,6 +7,7 @@ Description:
 """
 from typing import List
 
+# from wiseagent.action.memory_action.base_memory_action import BaseMemoryAction
 from wiseagent.action.memory_action.base_memory_action import BaseMemoryAction
 from wiseagent.agent_data.base_agent_data import AgentData
 from wiseagent.common.annotation import singleton
@@ -15,7 +16,6 @@ from wiseagent.protocol.action_command import ActionCommand
 
 @singleton
 class LongTermMemoryAction(BaseMemoryAction):
-    action_name: str = "LongTermMemoryAction"
     action_type: str = "MemoryAtion"
     action_description: str = "Actions to manage long trem memory"
 

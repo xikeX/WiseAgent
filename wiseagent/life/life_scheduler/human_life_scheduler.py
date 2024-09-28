@@ -8,7 +8,7 @@ Description:
 import time
 from typing import List
 
-from wiseagent.action.plan_action.base_plan_action import PlanAction
+from wiseagent.action.plan_action.base_plan_action import BasePlanAction
 from wiseagent.agent_data.base_agent_data import AgentData, get_current_agent_data
 from wiseagent.common.annotation import singleton
 from wiseagent.core.agent_core import get_agent_core
@@ -28,9 +28,10 @@ class HumanLifeScheduler(BaseLifeScheduler):
         plan_action_list = []
         normal_action_list = []
         agent_core = get_agent_core()
-        for action_name in agent_data.action_ability:
+        for action_config in agent_data.action_ability:
+            action_name = action_config["action_name"]
             action = agent_core.get_action(action_name)
-            if isinstance(action, PlanAction):
+            if isinstance(action, BasePlanAction):
                 plan_action_list.append(action)
             else:
                 normal_action_list.append(action)
@@ -54,13 +55,17 @@ class HumanLifeScheduler(BaseLifeScheduler):
             command: ActionCommand
             for command in command_list:
                 current_action = agent_core.get_action(command.action_name)
+                rsp = ""
                 if hasattr(current_action, command.action_method) and callable(
                     getattr(current_action, command.action_method)
                 ):
                     # current_action.action_method(self,agent_data,command.params)
                     method = current_action.get_method(action.action_method)
-                    rsp = method(agent_data, **command.parameters)
-                agent_core.add_memory(rsp)
+                    rsp = method(**command.args)
+                else:
+                    rsp = f"{command.action_method} not found"
+                if rsp:
+                    agent_data.add_memory(rsp)
 
 
 def get_life_scheduler():

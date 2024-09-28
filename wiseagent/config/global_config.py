@@ -24,6 +24,12 @@ class GlobalConfig(BaseModel, YamlConfig):
     life_scheduler_module_path: List[str] = None
     life_manager_module_path: str = ""
 
+    action_module_path: List[str] = None
+    action_manager_module_path: str = ""
+
+    llm_module_path: List[str] = None
+    llm_manager_module_path: str = ""
+
     @classmethod
     def default(cls):
         config_file_path = CONFIG_PATH / "global_config.yaml"

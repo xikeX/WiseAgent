@@ -2,19 +2,19 @@
 Author: Huang Weitao
 Date: 2024-09-19 23:55:33
 LastEditors: Huang Weitao
-LastEditTime: 2024-09-21 21:43:35
+LastEditTime: 2024-09-21 23:38:06
 Description: 
 """
-import enum
 import inspect
 import json
 from collections import defaultdict
+from enum import Enum
 from typing import Dict
 
 import xmltodict
 
 
-class DescriptionType(enum):
+class DescriptionType(Enum):
     DICT_TYPE = 1
     JSON_TYPE = 2
     XML_TYPE = 3
@@ -28,7 +28,6 @@ def _get_action_class_desciprtion(action) -> Dict:
     res["class_description"] = action.__doc__
     # class method that have annotated with @action
     res["class_method"] = defaultdict()
-    c = action.plan.__doc__
     for name, method in inspect.getmembers(action, predicate=inspect.isfunction):
         if hasattr(method, "action"):
             # method name
@@ -36,13 +35,15 @@ def _get_action_class_desciprtion(action) -> Dict:
             # mothod parameters name and type(if has)
             for param in inspect.signature(method).parameters.values():
                 if param.name != "self":
-                    res["class_method"][name][param.name] = param.annotation
+                    res["class_method"][name]["param"] = {"param_name": param.name}
                     if param.annotation != inspect.Parameter.empty:
-                        res["class_method"][name][param.name] = param.annotation.__name__
+                        res["class_method"][name]["param"]["param_type"] = param.annotation.__name__
             # method description
             res["class_method"][name]["method_description"] = method.__doc__
             # return type
             # res['class_method'][name]['return_type'] = method.__annotations__['return'].__name__
+    if not res["class_method"]:
+        return {}
     return res
 
 

@@ -2,23 +2,22 @@
 Author: Huang Weitao
 Date: 2024-09-18 22:31:33
 LastEditors: Huang Weitao
-LastEditTime: 2024-09-26 22:49:22
+LastEditTime: 2024-09-26 23:25:01
 Description: 
 """
 import os
-import queue
 import time
 from datetime import datetime
 
 from wiseagent.agent_data.base_agent_data import AgentData
 from wiseagent.core.agent_core import get_agent_core
 from wiseagent.monitor.monitor import Monitor
-from wiseagent.protocol.message import STREAM_END_FLAG, Message
+from wiseagent.protocol.message import Message, MessageType
 from wiseagent.receiver.base_receiver import BaseReceiver
 
 # get the current folder of the file
 current_folder = os.path.dirname(os.path.abspath(__file__))
-test_report_config_file = os.path.join(current_folder, "test_report.yaml")
+chat_agent_config_file = os.path.join(current_folder, "chat_agent.yaml")
 
 
 def test_main():
@@ -37,6 +36,7 @@ def test_main():
         receiver_message = Message(
             send_from="User",
             send_to="Bob",
+            message_type=MessageType.COMUNICATION,
             content=user_input,
             timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )

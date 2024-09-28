@@ -10,12 +10,16 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel
 
+from wiseagent.action.base import BaseAction
 from wiseagent.agent_data.base_agent_data import AgentData
 from wiseagent.core.agent_core import AgentCore
 
 
-class BasePlanAction(BaseModel, ABC):
+class BasePlanAction(BaseAction, ABC):
     """Base class for all plan actions"""
+
+    def __init__(self):
+        super().__init__()
 
     @abstractmethod
     def plan(self, **kwargs) -> Dict:
@@ -29,9 +33,5 @@ class BasePlanAction(BaseModel, ABC):
         raise NotImplementedError("Subclass must implement abstract method")
 
 
-def register(agent_core: "AgentCore"):
-    """Register the plan action to the agent core.
-    Usually it will include the action to the action_list.
-    Args:
-        agent_core (AgentCore): The agent core
-    """
+def get_action():
+    raise NotImplementedError("BasePlanAction is an abstract class and cannot be instantiated")

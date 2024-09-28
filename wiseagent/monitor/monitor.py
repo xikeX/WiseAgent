@@ -24,7 +24,7 @@ from wiseagent.common.annotation import singleton
 from wiseagent.config import GLOBAL_CONFIG, logger
 from wiseagent.core.agent_core import AgentCore, get_agent_core
 from wiseagent.monitor.reporter.base_reporter import BaseReporter
-from wiseagent.protocol.message import ReportMessage
+from wiseagent.protocol.message import Message
 
 
 @singleton
@@ -40,15 +40,23 @@ class Monitor(BaseModel):
         for reporter_module_path in GLOBAL_CONFIG.reporter_module_path:
             # register the perecptron module
             import_module = importlib.import_module(reporter_module_path)
-            if not hasattr(import_module, "get_reporter") and not callable(getattr(import_module, "get_reporter")):
+            if not hasattr(import_module, "get_reporter") or not callable(getattr(import_module, "get_reporter")):
                 raise Exception(f"Reporter Module {reporter_module_path} does not have a get_reporter method")
             reporter = import_module.get_reporter()
             if reporter not in self.reportor_list:
                 self.reportor_list.append(reporter)
 
-    def add_message(self, msg: ReportMessage):
-        if not isinstance(msg, ReportMessage):
-            logger.warning(f"Message {msg} is not a ReportMessage, and will be ignored")
+    def resgiter(self, reporter: BaseReporter):
+        """Register a reporter to the monitor.
+        NOTE : The EnvReceiver is a Reporter of the agent system.
+        Args:
+            reporter (BaseReporter): The reporter to register."""
+        if reporter not in self.reportor_list:
+            self.reportor_list.append(reporter)
+
+    def add_message(self, msg: Message):
+        if not isinstance(msg, Message):
+            logger.warning(f"Message {msg} is not a Message, and will be ignored")
             return
         self.reportor_cache.put(msg)
 
@@ -73,16 +81,13 @@ class Monitor(BaseModel):
                 continue
             self.handle_report(agent, message)
 
-    def handle_report(self, agentdata: AgentData, message: ReportMessage):
+    def handle_report(self, agentdata: AgentData, message: Message):
+        """This function will send the message to the each of the reporter in the reportor_list."""
         for reporter in self.reportor_list:
-            if reporter.name in agentdata.report_ability and any(
-                [key_word == message.report_type for key_word in reporter.map_key_words]
-            ):
-                if message.is_stream:
-                    reporter.handle_stream_message(agentdata, message)
-                else:
-                    reporter.handle_message(agentdata, message)
-                break
+            if message.is_stream:
+                reporter.handle_stream_message(agentdata, message)
+            else:
+                reporter.handle_message(agentdata, message)
 
     def run_report_thread(self) -> bool:
         # check if the thread is running

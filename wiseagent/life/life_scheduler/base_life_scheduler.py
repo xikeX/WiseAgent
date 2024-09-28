@@ -7,13 +7,16 @@ Description:
 """
 
 from abc import ABC, abstractmethod
+from typing import List
 
 from pydantic import BaseModel
 
+from wiseagent.agent_data.base_agent_data import AgentData, get_current_agent_data
 from wiseagent.common.annotation import singleton
+from wiseagent.core.agent_core import get_agent_core
+from wiseagent.protocol.message import Message
 
 
-@singleton
 class BaseLifeScheduler(BaseModel, ABC):
     """Base class for all life schedules"""
 
@@ -22,3 +25,19 @@ class BaseLifeScheduler(BaseModel, ABC):
     @abstractmethod
     def life(self):
         pass
+
+    def llm_ask(self, prompt, memory: List[Message] = None, system_prompt: str = None):
+        """Ask the LLM to generate a response to the given prompt."""
+        agent_data: AgentData = get_current_agent_data()
+        agent_core = get_agent_core()
+        if memory is None:
+            # Get the lastest memory from the agent autumaticly
+            memory = agent_data.get_last_memory()
+        memory = memory + [Message(role="user", content=prompt)]
+        llm = agent_core.get_llm(agent_data.llm_ability["llm_name"])
+        if not llm:
+            raise Exception("LLM not found")
+        if not llm.check() and agent_data.llm_ability["api_key"]:
+            llm.set_api_key(agent_data.llm_ability["api_key"])
+        rsp = llm.llm_ask(memory=memory, system_prompt=system_prompt)
+        return rsp

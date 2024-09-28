@@ -12,15 +12,14 @@ from wiseagent.agent_data.base_agent_data import AgentData
 from wiseagent.common.annotation import singleton
 from wiseagent.config import logger
 from wiseagent.monitor.reporter.base_reporter import BaseReporter
-from wiseagent.protocol.message import STREAM_END_FLAG, ReportMessage
+from wiseagent.protocol.message import STREAM_END_FLAG, Message
 
 
 @singleton
 class TextReporter(BaseReporter):
     name: str = "TextReporter"
-    map_key_words: List[str] = ["Text"]
 
-    def handle_stream_message(self, agentdata: AgentData, report_message: ReportMessage) -> bool:
+    def handle_stream_message(self, agentdata: AgentData, report_message: Message) -> bool:
         """the single agent report will report the message to the website."""
         logger.info(f"{agentdata.name}:")
         stream_queue = report_message.stream_queue
@@ -34,7 +33,7 @@ class TextReporter(BaseReporter):
             logger.info(message_block)
         return True
 
-    def handle_message(self, agentdata: AgentData, report_message: ReportMessage) -> bool:
+    def handle_message(self, agentdata: AgentData, report_message: Message) -> bool:
         logger.info(f"{agentdata.name}: {report_message.content}")
         return True
 

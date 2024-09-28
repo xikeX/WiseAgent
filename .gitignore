@@ -60,3 +60,6 @@ ipython_config.py
 
 # log
 logs/
+
+# vscode config
+.vscode/
