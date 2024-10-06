@@ -2,21 +2,18 @@
 Author: Huang Weitao
 Date: 2024-09-21 22:09:35
 LastEditors: Huang Weitao
-LastEditTime: 2024-09-27 00:50:00
+LastEditTime: 2024-10-03 22:22:56
 Description: 
 """
 
-import time
 from datetime import datetime
-
-from pydantic import BaseModel
 
 from wiseagent.action.action_annotation import action
 from wiseagent.action.base import BaseAction
 from wiseagent.agent_data.base_agent_data import get_current_agent_data
 from wiseagent.common.annotation import singleton
 from wiseagent.core.agent_core import get_agent_core
-from wiseagent.protocol.message import Message, MessageType
+from wiseagent.protocol.message import EnvironmentHandleType, Message
 
 
 @singleton
@@ -49,7 +46,7 @@ class Chat(BaseAction):
         report_message = Message(
             send_from=agent_data.name,
             send_to=target_agent.strip(),
-            message_type=MessageType.COMUNICATION,
+            env_handle_type=EnvironmentHandleType.COMUNICATION,
             content=message.strip(),
             time_stamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             track=[f"file:{__file__}\nfuntion:chat"],

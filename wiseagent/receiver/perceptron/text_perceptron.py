@@ -21,7 +21,7 @@ class TextPerceptron(BasePerceptron):
     def handle_message(self, agent_data: AgentData, msg: Message):
         # Add the received message to the short-term memory
         agent_data.add_memory(msg, from_env=True)
-        logger.info(f"TextPerceptron received message: {msg}")
+        logger.info(f"Received message: {msg}")
 
 
 def get_perceptron():

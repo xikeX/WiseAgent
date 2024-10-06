@@ -1,3 +1,10 @@
+"""
+Author: Huang Weitao
+Date: 2024-09-28 21:15:25
+LastEditors: Huang Weitao
+LastEditTime: 2024-10-03 11:39:17
+Description: 
+"""
 import time
 from typing import Any
 
@@ -19,7 +26,7 @@ class WeChatActionData(BaseActionData):
 class WeChatAction(BaseAction):
     """This is ActionCass to do wechat action, all the action will be play in Wechat Application"""
 
-    name: str = "WeChatAction"
+    action_name: str = "WeChatAction"
     action_description: str = " this class is to do wechat action."
 
     def init_agent(self, agent_data: AgentData):

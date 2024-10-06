@@ -2,7 +2,7 @@
 Author: Huang Weitao
 Date: 2024-09-19 22:31:46
 LastEditors: Huang Weitao
-LastEditTime: 2024-09-21 12:42:53
+LastEditTime: 2024-10-06 16:35:22
 Description: 
 """
 
@@ -20,15 +20,23 @@ from wiseagent.core.agent_core import AgentCore
 
 @singleton
 class LifeManager(BaseModel):
-    # the map of agent_life_thread, to prevent agent start multiple life thread
+    """
+    LifeManager is a singleton class responsible for managing the life cycle of agents.
+    It ensures that each agent has only one life thread and provides a way to start and manage these threads.
+    """
+
+    # A map to store agent life threads, preventing multiple life threads for the same agent.
     agent_life_thread_map: dict = {}
+    # A map to store different life schedulers, which are used to control the life cycle of agents.
     life_scheduler_map: Dict[str, Any] = {}
 
     def __init__(self):
+        """Initialize the LifeManager and load all life schedulers from the configuration."""
+        super().__init__()
         self._init_life_scheduler()
 
     def _init_life_scheduler(self):
-        super().__init__()
+        """Initialize and load life schedulers from the configured modules."""
         for life_scheduler_module_path in GLOBAL_CONFIG.life_scheduler_module_path:
             import_module = importlib.import_module(life_scheduler_module_path)
             if not hasattr(import_module, "get_life_scheduler") or not callable(
@@ -50,18 +58,24 @@ class LifeManager(BaseModel):
         Raise:
             Exception: If the agent has already started life thread.
         """
-        # Get the life thread of the agent
+        # Get the existing life thread for the agent, or create a new one.
         thread = self.agent_life_thread_map.get(agent_data.name, None) or threading.Thread(
             target=self._life, args=(agent_data,)
         )
-        # If the agent has already started life thread, raise an exception
+        # Check if the thread is already running.
         if thread.is_alive():
             raise Exception(f"Agent {agent_data.name} has already started life thread")
-        # Start the life thread of the agent
+        # Start the life thread for the agent.
         self.agent_life_thread_map[agent_data.name] = thread
         thread.start()
 
     def _life(self, agent_data: AgentData):
+        """The actual life cycle of the agent, managed by the appropriate life scheduler.
+
+        Args:
+            agent_data (AgentData): The data of the agent.
+        """
+        # with agent_data will set the current_agent_data to the agent_data in the thread.
         with agent_data:
             life_scheduler = self.life_scheduler_map[agent_data.life_schedule_ability]
             life_scheduler.life()

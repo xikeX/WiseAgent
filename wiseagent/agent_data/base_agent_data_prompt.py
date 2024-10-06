@@ -14,6 +14,8 @@ You are a helpful agent and follow is the profile of you.
 ## description
 {agent_description}
 
+## Current Environment
+{current_environment}
 ## Tools Description
 {tools_description}
 

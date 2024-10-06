@@ -13,8 +13,6 @@ from datetime import datetime
 from wiseagent.action.normal_action.wechat import WeChatAction
 from wiseagent.agent_data.base_agent_data import AgentData
 from wiseagent.core.agent_core import get_agent_core
-from wiseagent.monitor.monitor import Monitor
-from wiseagent.protocol.message import Message, MessageType
 from wiseagent.receiver.base_receiver import BaseReceiver
 
 # get the current folder of the file
@@ -25,8 +23,6 @@ chat_agent_config_file = os.path.join(current_folder, "wechat_agent.yaml")
 def test_main():
     agent_core = get_agent_core()
     agent_core.init()
-    agent_core.preparetion()
-    receiver = BaseReceiver()
 
     chat_agent_data = AgentData.from_yaml_file(chat_agent_config_file)
 
@@ -55,17 +51,6 @@ def test_main():
 
     while True:
         time.sleep(1)
-    # agent_core.start_agent_life(chat_agent_data)
-    # while True:
-    #     user_input = input("Chat:")
-    #     receiver_message = Message(
-    #         send_from="User",
-    #         send_to="Bob",
-    #         message_type=MessageType.COMUNICATION,
-    #         content=user_input,
-    #         timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-    #     )
-    #     receiver.add_message(receiver_message)
 
 
 if __name__ == "__main__":

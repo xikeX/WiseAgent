@@ -104,6 +104,20 @@ Requirment: Open the wechat and send message to the "溪客", message is "今晚
     }
 ]
 ```
+
+Example 5:
+Requirment: Search the arxiv article contain LLM and Agent.
+```json
+[
+   {
+        "action_name": "ArxivAction",
+        "action_method": "search_arxiv_article",
+        "args": {
+            "search_terms": "\\\"LLM\\\" AND \\\"Agent\\\"",
+            "pass_days": 1
+        }
+    } 
+]
 """
 
 

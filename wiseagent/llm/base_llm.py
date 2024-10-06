@@ -1,5 +1,12 @@
 """
 Author: Huang Weitao
+Date: 2024-09-28 21:15:25
+LastEditors: Huang Weitao
+LastEditTime: 2024-10-06 16:34:55
+Description: 
+"""
+"""
+Author: Huang Weitao
 Date: 2024-09-19 23:53:17
 LastEditors: Huang Weitao
 LastEditTime: 2024-09-27 00:55:25
@@ -10,8 +17,7 @@ import queue
 from abc import ABC, abstractmethod
 from typing import List
 
-from pydantic import BaseModel, ConfigDict
-from typing_extensions import Unpack
+from pydantic import BaseModel
 
 from wiseagent.protocol.message import Message
 
@@ -46,18 +52,8 @@ class BaseLLM(BaseModel, ABC):
         for memory in memories:
             # If the message if from AI, the message.role is set to "assistant", otherwise it is set to "user".
             # If the message.role is not set, it is set to "user".
-            if memory.role:
-                messages.append({"role": memory.role, "content": memory.content})
-            else:
-                if memory.send_from == memory.send_to:
-                    messages.append({"role": "user", "content": memory.content})
-                else:
-                    messages.append(
-                        {
-                            "role": "user",
-                            "content": f"message from{memory.send_from} to {memory.send_to}\ncontent:{memory.content}",
-                        }
-                    )
+            messages.append({"role": memory.llm_handle_type, "content": memory.content})
+
         if user_prompt:
             messages.append({"role": "user", "content": user_prompt})
         return messages

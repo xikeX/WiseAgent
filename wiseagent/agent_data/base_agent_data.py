@@ -1,12 +1,5 @@
 """
 Author: Huang Weitao
-Date: 2024-09-21 19:19:27
-LastEditors: Huang Weitao
-LastEditTime: 2024-09-21 22:52:53
-Description: 
-"""
-"""
-Author: Huang Weitao
 Date: 2024-09-17 14:46:18
 LastEditors: Huang Weitao
 LastEditTime: 2024-09-21 01:58:56
@@ -24,6 +17,7 @@ from pydantic import BaseModel, Field
 from wiseagent.agent_data.base_agent_data_prompt import AGENT_SYSTEM_PROMPT
 from wiseagent.common.yaml_config import YamlConfig
 from wiseagent.config import logger
+from wiseagent.config.const import WORKING_DIR
 from wiseagent.protocol.message import Message
 
 # The current agent data.
@@ -41,12 +35,15 @@ class AgentData(BaseModel, YamlConfig):
     description: str = ""
     data_save_file: str = ""
 
-    # Personal Prompt
+    # Personal Prompt. This exmaple will add into the system prompt of the agent
     agent_system_prompt_template: str = AGENT_SYSTEM_PROMPT
     agent_system_prompt: str = ""
+    current_environment: str = ""
     tools_description: str = ""  # This will be initialize in the agent_core.init_agent
     agent_instructions: str = ""
     agent_example: str = ""
+
+    __agent_global_working_dir: str = WORKING_DIR
 
     # This will be set to ture in the agent_core.init_agent to prevent the agent not initialized or  being initialized multiple times
     is_init: bool = False
@@ -93,21 +90,35 @@ class AgentData(BaseModel, YamlConfig):
         self.agent_system_prompt = self.get_agent_system_prompt()
 
     def get_agent_system_prompt(
-        self, name=None, description=None, tools_description=None, agent_instructions=None, agent_example=None
+        self,
+        name=None,
+        description=None,
+        current_environment=None,
+        tools_description=None,
+        agent_instructions=None,
+        agent_example=None,
     ):
         name = name or self.name
         description = description or self.description
+        current_environment = current_environment or self.current_environment
         tools_description = tools_description or self.tools_description
         agent_instructions = agent_instructions or self.agent_instructions
         agent_example = agent_example or self.agent_example
         system_prompt = self.agent_system_prompt_template.format(
             agent_name=name,
             agent_description=description,
+            current_environment=current_environment,
             tools_description=tools_description,
             agent_instructions=agent_instructions,
             agent_example=agent_example,
         )
         return system_prompt
+
+    def get_working_dir(self):
+        return self.__agent_global_working_dir
+
+    def set_working_dir(self, path: Union[Path, str]):
+        self.__agent_global_working_dir = Path(path)
 
     @property
     def is_alive(self):
@@ -125,11 +136,10 @@ class AgentData(BaseModel, YamlConfig):
     def wake_up(self):
         self._is_sleep = False
 
-    def add_memory(self, message: Union[Message, str], from_env=False):
+    def add_memory(self, message: Union[Message], from_env=False):
         """
         Args:
             message (Union[Message,str]): The message to add to the short term memory.
-            message_type (str, optional): The type of the message. Defaults to "Normal".
         NOTE:
             There has two way to implement this function.
             One is implement in here (agent_data). It is convenient for receiver to add short term memory.
@@ -138,16 +148,10 @@ class AgentData(BaseModel, YamlConfig):
         # TODO: add_memory implement in short term memory manager action
         """
         # When add Memory, the message will change to Normal Message.
-        if isinstance(message, str):
-            new_message = Message(
-                send_from="self", send_to="self", cause_by=self.name, content=message, track=[], role="assistant"
-            )
-        else:
-            new_message = Message.transform(message)
-        new_message.track.append(f"file:{__file__} function:add_memory")
+        message.track.append(f"file:{__file__} function:add_memory")
         with self.short_term_memory_lock:
-            logger.info(f"Add message to short term memory: {new_message}")
-            self.short_term_memory.append(new_message)
+            logger.info(f"Add message to short term memory: {message}")
+            self.short_term_memory.append(message)
             if from_env:
                 self.uncheck_message_number += 1
 

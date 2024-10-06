@@ -27,15 +27,13 @@ class DeepSeekAPI(BaseLLM):
     semaphore: Any = None
     client: Any = None
     temperature: float = 1
+    # The number of thread that can call llm_ask at the same time
+    semaphore_size: int = 5
 
     def __init__(self, api_key=None) -> None:
         super().__init__()
         self.api_key = api_key
-        if self.api_key is None:
-            logger.warning(f"DeepSeekAPI: api_key is None")
-        else:
-            self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
-        self.semaphore = threading.Semaphore(5)  # The API can be called at most 5 times per second.
+        self.semaphore = threading.Semaphore(self.semaphore_size)
 
     def check(self):
         return self.api_key is not None
@@ -45,13 +43,18 @@ class DeepSeekAPI(BaseLLM):
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         logger.info(f"DeepSeekAPI: set api_key successfully")
 
-    def llm_ask(self, memory: List[Message] = None, system_prompt: str = None, queue: queue.Queue = None) -> str:
-        """Gernerate a response from the model using the given prompt.
+    def llm_ask(
+        self, memory: List[Message] = None, system_prompt: str = None, queue: queue.Queue = None, verbose: bool = True
+    ) -> str:
+        """Generate a response from the model using the given prompt.
 
         Args:
-            memory (List[Memory], optional): The memory to use for the response. Defaults to None.
-            system_prompt (str, optional): The system prompt to use for the response. Defaults to None.
-            queue (queue.Queue, optional): If need a stream process, the queue is used to store the response. Defaults to None.
+            memory (List[Message], optional): The conversation history. Defaults to None.
+            system_prompt (str, optional): The system prompt. Defaults to None.
+            queue (queue.Queue, optional): If provided, the response will be put into the queue for streaming. Defaults to None.
+
+        Returns:
+            str: The generated response.
         """
         # Each request will hold a semaphore to prevent the API from being called too frequently.
         with self.semaphore:
@@ -63,7 +66,8 @@ class DeepSeekAPI(BaseLLM):
             collected_messages = []
             for chunk in response:
                 chunk_message = chunk.choices[0].delta.content or "" if chunk.choices else ""  # extract the message
-                print(chunk_message, end="")
+                if verbose:
+                    print(chunk_message, end="")
                 collected_messages.append(chunk_message)
                 # If the queue is not None: the response will be put into the queue.
                 if queue:

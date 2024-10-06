@@ -2,7 +2,7 @@
 Author: Huang Weitao
 Date: 2024-09-18 22:31:33
 LastEditors: Huang Weitao
-LastEditTime: 2024-09-26 22:49:22
+LastEditTime: 2024-10-06 16:10:17
 Description: 
 """
 import os
@@ -24,10 +24,10 @@ test_report_config_file = os.path.join(current_folder, "test_report.yaml")
 def test_main():
     agent_core = get_agent_core()
     agent_core.init()
-    agent_core.preparetion()
-    receiver = BaseReceiver()
+    agent_core._preparetion()
+    receiver = agent_core.get_receiver()
 
-    chat_agent_data = AgentData.from_yaml_file(chat_agent_config_file)
+    chat_agent_data = AgentData.from_yaml_file(test_report_config_file)
 
     agent_core.init_agent(chat_agent_data)
 

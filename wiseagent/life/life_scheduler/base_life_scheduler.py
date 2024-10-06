@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from wiseagent.agent_data.base_agent_data import AgentData, get_current_agent_data
 from wiseagent.common.annotation import singleton
 from wiseagent.core.agent_core import get_agent_core
-from wiseagent.protocol.message import Message
+from wiseagent.protocol.message import Message, UserMessage
 
 
 class BaseLifeScheduler(BaseModel, ABC):
@@ -33,7 +33,7 @@ class BaseLifeScheduler(BaseModel, ABC):
         if memory is None:
             # Get the lastest memory from the agent autumaticly
             memory = agent_data.get_last_memory()
-        memory = memory + [Message(role="user", content=prompt)]
+        memory = memory + [UserMessage(content=prompt)]
         llm = agent_core.get_llm(agent_data.llm_ability["llm_name"])
         if not llm:
             raise Exception("LLM not found")

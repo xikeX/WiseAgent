@@ -12,3 +12,9 @@ repos:
     hooks:
       - id: isort
         args: ['--profile', 'black']
+
+# - repo: https://github.com/PyCQA/flake8
+#   rev: 6.0.0  # 使用最新版本
+#   hooks:
+#     - id: flake8
+#       args: [--ignore=E203,E266,E501,W503]  # 自定义忽略规则

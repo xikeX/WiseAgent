@@ -5,7 +5,6 @@ import re
 def parse_json_data(respond):
     """get the json data from the respond"""
     try:
-        # 1.get the json data from ```json used re
         pattern = re.compile(r"```json\n(.*?)\n```", re.DOTALL)
         match = pattern.search(respond)
         if not match:

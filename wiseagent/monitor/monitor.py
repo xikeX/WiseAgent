@@ -29,9 +29,9 @@ from wiseagent.protocol.message import Message
 
 @singleton
 class Monitor(BaseModel):
-    reportor_list: List[BaseReporter] = []
+    reporter_list: List[BaseReporter] = []
     # The stream_queue_list is used to store the stream data
-    reportor_cache: Any = queue.Queue()
+    reporter_cache: Any = queue.Queue()
     report_thread: Any = None
 
     def __init__(self):
@@ -43,22 +43,22 @@ class Monitor(BaseModel):
             if not hasattr(import_module, "get_reporter") or not callable(getattr(import_module, "get_reporter")):
                 raise Exception(f"Reporter Module {reporter_module_path} does not have a get_reporter method")
             reporter = import_module.get_reporter()
-            if reporter not in self.reportor_list:
-                self.reportor_list.append(reporter)
+            if reporter not in self.reporter_list:
+                self.reporter_list.append(reporter)
 
     def resgiter(self, reporter: BaseReporter):
         """Register a reporter to the monitor.
         NOTE : The EnvReceiver is a Reporter of the agent system.
         Args:
             reporter (BaseReporter): The reporter to register."""
-        if reporter not in self.reportor_list:
-            self.reportor_list.append(reporter)
+        if reporter not in self.reporter_list:
+            self.reporter_list.append(reporter)
 
     def add_message(self, msg: Message):
         if not isinstance(msg, Message):
             logger.warning(f"Message {msg} is not a Message, and will be ignored")
             return
-        self.reportor_cache.put(msg)
+        self.reporter_cache.put(msg)
 
     def _report(self, agent_core: "AgentCore"):
         """Receive messages from the message queue and process them.
@@ -69,7 +69,7 @@ class Monitor(BaseModel):
             # get the message from the queue, if the queue is empty, the get() method will block until a message is available
             message = None
             try:
-                message = self.reportor_cache.get(timeout=1)
+                message = self.reporter_cache.get(timeout=1)
             except queue.Empty:
                 continue
             agent = None
@@ -82,8 +82,8 @@ class Monitor(BaseModel):
             self.handle_report(agent, message)
 
     def handle_report(self, agentdata: AgentData, message: Message):
-        """This function will send the message to the each of the reporter in the reportor_list."""
-        for reporter in self.reportor_list:
+        """This function will send the message to the each of the reporter in the reporter_list."""
+        for reporter in self.reporter_list:
             if message.is_stream:
                 reporter.handle_stream_message(agentdata, message)
             else:
@@ -102,8 +102,13 @@ class Monitor(BaseModel):
             print(e)
             return False
 
+    def close(self):
+        if self.report_thread is not None:
+            self.report_thread.join()
+
 
 def register(agent_core: "AgentCore"):
     """Register the receiver to the agent core."""
     agent_core.monitor = Monitor()
-    agent_core.start_function_list.append(agent_core.monitor.run_report_thread)
+    agent_core._prepare_function_list.append(agent_core.monitor.run_report_thread)
+    agent_core._close_function_list.append(agent_core.monitor.close)

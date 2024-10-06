@@ -1,25 +1,21 @@
 """
 Author: Huang Weitao
-Date: 2024-09-26 22:39:16
+Date: 2024-09-30 00:08:48
 LastEditors: Huang Weitao
-LastEditTime: 2024-09-28 20:12:24
-Description: 
+LastEditTime: 2024-10-06 13:37:48
+Description: Run arxiv agent
 """
-
-
-import os
-
 from wiseagent.agent_data.base_agent_data import AgentData
 from wiseagent.core.agent_core import get_agent_core
 from wiseagent.env.multi_agent_env import MultiAgentEnv
-from wiseagent.receiver.base_receiver import BaseReceiver
 
-yaml_file = r"tests\run\run_wechat_agent\wechat_agent.yaml"
+yaml_file = r"tests\run\run_arxiv_agent\arxiv_agent.yaml"
 
 
 def main():
     agent_core = get_agent_core()
     agent_core.init()
+    agent_core._preparetion()
     # load agent data
     agent_data_list = []
     agent_data_list.append(AgentData.from_yaml_file(yaml_file))
@@ -34,5 +30,6 @@ def main():
     env._listen_user_input()
 
 
+# @Bob 收集一下包含LLM和Agent的论文，最近3天的，保存起来，名字就叫‘LLM_Agent 2024-10-01 2024-10-03 .xlsx
 if __name__ == "__main__":
     main()

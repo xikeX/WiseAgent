@@ -18,7 +18,7 @@ from wiseagent.common.annotation import singleton
 from wiseagent.common.get_action_class_descirption import get_action_class_desciprtion
 from wiseagent.core.agent_core import AgentCore, get_agent_core
 from wiseagent.protocol.action_command import ActionCommand
-from wiseagent.protocol.message import Message
+from wiseagent.protocol.message import Message, UserMessage
 
 
 class BaseAction(BaseModel):
@@ -73,7 +73,7 @@ class BaseAction(BaseModel):
         if memory is None:
             # Get the lastest memory from the agent autumaticly
             memory = agent_data.get_last_memory()
-        memory = memory + [Message(role="user", content=prompt)]
+        memory = memory + [UserMessage(content=prompt)]
         llm = agent_core.get_llm(agent_data.llm_ability["llm_name"])
         if not llm:
             raise Exception("LLM not found")

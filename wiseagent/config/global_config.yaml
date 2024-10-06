@@ -27,6 +27,7 @@ action_module_path:
   # normal action
   - "wiseagent.action.normal_action.chat"
   - "wiseagent.action.normal_action.wechat"
+  - "wiseagent.action.normal_action.arxiv"
 
 
 # LLM

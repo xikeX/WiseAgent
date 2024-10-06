@@ -10,7 +10,7 @@ import time
 
 from wiseagent.agent_data.base_agent_data import AgentData
 from wiseagent.core.agent_core import get_agent_core
-from wiseagent.protocol.message import Message, MessageType
+from wiseagent.protocol.message import EnvironmentHandleType, Message
 from wiseagent.receiver.base_receiver import BaseReceiver
 
 # get the current folder of the file
@@ -37,7 +37,7 @@ def test_main():
     text_message = Message(
         send_from="User",
         send_to="Text_receiver",
-        message_type=MessageType.COMUNICATION,
+        env_handle_type=EnvironmentHandleType.COMUNICATION,
         content="Hello, Text_receiver!",
         type="text",
         timestamp="2023-10-01 12:00:00",
@@ -47,7 +47,7 @@ def test_main():
     network_message = Message(
         send_from="User",
         send_to="Network_receiver",
-        message_type=MessageType.COMUNICATION,
+        env_handle_type=EnvironmentHandleType.COMUNICATION,
         content="Hello, network_message!",
         type="network",
         timestamp="2023-10-01 12:00:00",
@@ -61,7 +61,7 @@ def test_main():
     normal_message = Message(
         send_from="User",
         send_to="Network_receiver",
-        message_type=MessageType.COMUNICATION,
+        env_handle_type=EnvironmentHandleType.COMUNICATION,
         content="Hello, network_message!",
         type="network",
         timestamp="2023-10-01 12:00:00",

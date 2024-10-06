@@ -2,14 +2,13 @@
 Author: Huang Weitao
 Date: 2024-09-19 23:55:33
 LastEditors: Huang Weitao
-LastEditTime: 2024-09-21 23:38:06
+LastEditTime: 2024-10-06 13:05:20
 Description: 
 """
 import inspect
 import json
 from collections import defaultdict
 from enum import Enum
-from typing import Dict
 
 import xmltodict
 
@@ -20,43 +19,51 @@ class DescriptionType(Enum):
     XML_TYPE = 3
 
 
-def _get_action_class_desciprtion(action) -> Dict:
-    res = {}
-    # class name
-    res["class_name"] = action.__class__.__name__
-    # class description
-    res["class_description"] = action.__doc__
-    # class method that have annotated with @action
-    res["class_method"] = defaultdict()
+def get_dict_description(action) -> dict:
+    """
+    Get the description of the action class.
+    Args:
+        action (Action): The action class.
+    Returns:
+        dict: The description of the action class.
+    """
+    result = {
+        "class_name": action.__class__.__name__,
+        "class_description": action.__doc__ or "",
+        "class_methods": defaultdict(dict),
+    }
     for name, method in inspect.getmembers(action, predicate=inspect.isfunction):
-        if hasattr(method, "action"):
-            # method name
-            res["class_method"][name] = {}
-            # mothod parameters name and type(if has)
-            for param in inspect.signature(method).parameters.values():
-                if param.name != "self":
-                    res["class_method"][name]["param"] = {"param_name": param.name}
-                    if param.annotation != inspect.Parameter.empty:
-                        res["class_method"][name]["param"]["param_type"] = param.annotation.__name__
-            # method description
-            res["class_method"][name]["method_description"] = method.__doc__
-            # return type
-            # res['class_method'][name]['return_type'] = method.__annotations__['return'].__name__
-    if not res["class_method"]:
+        if not hasattr(method, "action"):
+            continue
+        # Method name
+        method_info = {"method_description": method.__doc__ or ""}
+        result["class_methods"][name] = {}
+        # Method parameters and their types (if available)
+        for param in inspect.signature(method).parameters.values():
+            if param.name == "self":
+                continue
+            param_info = {"param_name": param.name}
+            if param.annotation != inspect.Parameter.empty:
+                param_info["param_type"] = param.annotation.__name__
+            method_info.setdefault("params", []).append(param_info)
+        result["class_methods"][name] = method_info
+    if not result["class_methods"]:
         return {}
-    return res
+    return result
 
 
 def get_action_class_desciprtion(action, description_type=DescriptionType.DICT_TYPE):
-    action_class_desciprtion = _get_action_class_desciprtion(action)
+    """
+    Get the description of the action class.
+    Args:
+        action (Action): The action class.
+        description_type (DescriptionType): The type of description to return.
+    """
+    action_class_desciprtion = get_dict_description(action)
     if description_type == DescriptionType.DICT_TYPE:
         return action_class_desciprtion
     elif description_type == DescriptionType.JSON_TYPE:
         return json.dumps(action_class_desciprtion, indent=4)
     elif description_type == DescriptionType.XML_TYPE:
-        xml_string = xmltodict.unparse(action_class_desciprtion, pretty=True)
+        return xmltodict.unparse(action_class_desciprtion, pretty=True)
     raise Exception("description_type not supported")
-
-
-def get_dict_description(action):
-    return get_action_class_desciprtion(action)

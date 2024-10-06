@@ -20,8 +20,7 @@ data_yaml_folder = r"tests\env\agent_data_yaml"
 def main():
     agent_core = get_agent_core()
     agent_core.init()
-    agent_core.preparetion()
-    receiver = BaseReceiver()
+    agent_core._preparetion()
     # load agent data
     yaml_list = os.listdir(data_yaml_folder)
     agent_data_list = []
@@ -35,7 +34,7 @@ def main():
         agent_core.start_agent_life(agent_data)
     # run env
     env = MultiAgentEnv()
-    env._run_env()
+    env._listen_user_input()
 
 
 if __name__ == "__main__":

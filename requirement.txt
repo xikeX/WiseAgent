@@ -8,3 +8,20 @@ dashscope
 
 # WeChat Ation
 wxauto 
+
+# Arkiv Action
+playwright
+Beautifulsoup4
+pandas
+openpyxl
+
+# frontend
+streamlit
+extra_streamlit_components
+streamlit_js_eval
+streamlit_float
+replicate
+streamlit_chatbox
+
+# backend
+flask
