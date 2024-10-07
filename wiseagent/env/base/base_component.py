@@ -31,8 +31,8 @@ class EnvBaseReceiver(BaseReporter, ABC):
             raise ValueError("handle_message is required")
         if not handle_stream_message:
             raise ValueError("handle_stream_message is required")
-        self.handle_stream_message = handle_message
-        self.handle_message = handle_stream_message
+        self.handle_message = handle_message
+        self.handle_stream_message = handle_stream_message
         # In here, will add the reporter to the reporter manager
         agent_core = get_agent_core()
         agent_core.get_monitor().resgiter(self)

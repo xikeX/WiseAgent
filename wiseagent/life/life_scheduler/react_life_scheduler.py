@@ -6,6 +6,7 @@ LastEditTime: 2024-10-05 11:13:57
 Description: 
 """
 
+import json
 import time
 from random import randint
 from typing import List
@@ -66,9 +67,9 @@ class ReActLifeSchedule(BaseLifeScheduler):
                     if "action_command_list" in rsp and rsp["action_command_list"]:
                         command_list.extend(rsp["action_command_list"])
                     # Report the thought and command
-                    agent_core.monitor.add_message(
-                        CommandMessage(content="```json\n" + str(rsp["action_command_list"]) + "\n```")
-                    )
+                    # agent_core.monitor.add_message(
+                    #     CommandMessage(content="```json\n" + json.dumps([c.model_dump() for c in rsp["action_command_list"]],ensure_ascii=False) + "\n```")
+                    # )
 
             # Act/ReAct
             command: ActionCommand
@@ -86,12 +87,13 @@ class ReActLifeSchedule(BaseLifeScheduler):
                 if rsp:
                     agent_data.add_memory(UserMessage(contnt=rsp))
                 # After executed the action, if the agent is dead, then break the loop
-                logger.info(rsp)
+                logger.info(f"{command.action_method} executed. " + rsp)
 
             # Judge if the task is finished (To prevent the agent from being stuck in a loop)
-            prompt = "Do you finsish your task? output:Yes/No"
+            prompt = "Do you finish your task ? output:Yes/No"
             rsp = self.llm_ask(prompt, agent_data.short_term_memory)
             if any([tag in rsp for tag in ["Yes", "yes"]]):
+                logger.info(f"Agent {agent_data.name} finsihed  task")
                 agent_data.sleep()
 
             # Sleep, forbidding the agent act too fast, and lead to cost too much money

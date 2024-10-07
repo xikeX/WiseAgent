@@ -101,11 +101,6 @@ class MultiAgentEnv(BaseEnvironment):
                 # this message is to other agent
                 self.env_report(message)
 
-        elif message.env_handle_type == EnvironmentHandleType.THOUGHT:
-            # This is a thought of the agent
-            with open("logs/thought.txt", "a", encoding="utf-8") as f:
-                f.write(f"{message.send_from}->{message.send_to}:{message.content}\n\n")
-
     def handle_stream_message(self, agent_data: AgentData, message: Message):
         """the single agent report will report the message to the website."""
         stream_queue = message.stream_queue

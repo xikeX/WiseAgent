@@ -39,6 +39,8 @@ class WebData:
 if "current_message_id" not in st.session_state:
     st.session_state["current_message_id"] = 0
     st.session_state["agent_workspace_map"] = {}
+if "chat_messages" not in st.session_state:
+    st.session_state["chat_messages"] = []
 
 if "polling" not in st.session_state:
     st.session_state.polling = False
@@ -54,7 +56,6 @@ def get_web_data() -> WebData:
 def main():
     """Main function where the app execution starts."""
     display_sidebar_ui()
-    init_chat_history()
     main_windows()
 
 
@@ -80,14 +81,22 @@ def display_sidebar_ui():
         web_data.current_chat_enviornment = web_data.environment_list[0]
         for enviornment_name in web_data.environment_list:
             # Create columns for the arrow and the environment name
-            col1, col2 = st.columns([1, 10])
-
-            with col1:
-                # Display an arrow if this is the currently selected environment
-                if web_data.current_chat_enviornment == enviornment_name:
+            if web_data.current_chat_enviornment == enviornment_name:
+                col1, col2 = st.columns([1, 10])
+                with col1:
+                    # Display an arrow if this is the currently selected environment
                     st.subheader("→")
-
-            with col2:
+                with col2:
+                    st.button(
+                        enviornment_name,
+                        on_click=change_chat_window,
+                        args=(
+                            "environment",
+                            enviornment_name,
+                        ),
+                        use_container_width=True,
+                    )
+            else:
                 st.button(
                     enviornment_name,
                     on_click=change_chat_window,
@@ -129,15 +138,25 @@ def display_sidebar_ui():
 
         # Display buttons for each available agent
         for agent_name in web_data.agent_list:
-            col1, col2 = st.columns([1, 10])
+            if web_data.current_chat_agent == agent_name:
+                col1, col2 = st.columns([1, 10])
 
-            with col1:
-                # Display an arrow if this is the currently selected agent
-                if web_data.current_chat_agent == agent_name:
+                with col1:
+                    # Display an arrow if this is the currently selected agent
                     st.subheader("→")
 
-            with col2:
-                #  Button to select the agent
+                with col2:
+                    #  Button to select the agent
+                    st.button(
+                        agent_name,
+                        on_click=change_chat_window,
+                        args=(
+                            "agent",
+                            agent_name,
+                        ),
+                        use_container_width=True,
+                    )
+            else:
                 st.button(
                     agent_name,
                     on_click=change_chat_window,
@@ -182,7 +201,7 @@ def chat_box(web_data, window_height):
                     params={"target_agent_name": target_agent_name, "content": content},
                 )
                 if response.status_code == 200:
-                    st.session_state.chat_messages.append({"role": "assistant", "content": response.text})
+                    st.session_state.chat_messages.append({"role": "assistant", "content": content})
                     st.rerun()
                 else:
                     st.toast(f"Agent {target_agent_name} not found")
@@ -220,15 +239,19 @@ def workspace_box(web_data, window_height):
                     )
 
                 if workspace_name == "file_upload":
+                    i = 1
                     for message in st.session_state.agent_workspace_map[chosen_agent_name][workspace_name]:
                         base64_data = message["file_content"]
                         _bytes = base64.b64decode(base64_data.encode(encoding="utf-8"))
+                        print(f"{i}.{message}")
                         st.download_button(
                             label=f"Download {message['file_name']} file",
                             file_name=message["file_name"],
                             data=_bytes,
                             use_container_width=True,
+                            key=message["file_name"] + str(i),
                         )
+                        i += 1
                 elif workspace_name == "preview markdown file":
                     file_list = [
                         file
@@ -298,10 +321,10 @@ def abort_chat(error_message: str):
 
 def handle_message(agent_name: str, message: Message):
     agent_name = agent_name.lower()
-    print("receiver message", message)
 
     def add_to_workspace(agent_name, env_handle_type, message):
         if message["content"].startswith("```json"):
+            print(message["content"][7:-3])
             message["content"] = json.loads(message["content"][7:-3])
         if agent_name not in st.session_state.agent_workspace_map:
             st.session_state.agent_workspace_map[agent_name] = {}
@@ -337,7 +360,7 @@ def fetch_message_from_backend():
             message = data["message"]
             next_position_tag = data["next_position_tag"]
             agent_name = data["agent_name"]
-            new_message = data["new_message"]
+            new_message = bool(data["new_message"])
             if new_message:
                 message = json.loads(message)
                 handle_message(agent_name, message)

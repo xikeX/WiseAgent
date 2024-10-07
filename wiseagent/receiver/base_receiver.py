@@ -79,7 +79,7 @@ class BaseReceiver(BaseModel):
                     (agent for agent in agent_core.agent_list if message.send_to == agent.name.lower()), None
                 )
                 if receive_agent:
-                    self.handle_message(agent, message)
+                    self.handle_message(receive_agent, message)
                 else:
                     logger.warning(f"Message {message} is not sent to any agent")
 

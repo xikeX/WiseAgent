@@ -61,6 +61,10 @@ ipython_config.py
 
 # log
 logs/
+log/
 
 # vscode config
 .vscode/
+
+# agent workspace
+workspace/

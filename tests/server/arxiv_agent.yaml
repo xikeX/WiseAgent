@@ -1,0 +1,21 @@
+
+name : "Bob"
+description : "话痨"
+
+receive_ability :
+  - "TextPerceptron"
+
+report_ability :
+  - "TextReporter"
+
+action_ability :
+  - action_name : "MethodPlanAction"
+  - action_name : "ArxivAction"
+  - action_name : "Chat"
+
+llm_ability :
+   llm_name : "DeepSeek"
+   api_key : "sk-cf379bba083e4827affc9ec61ee20d31"
+
+life_schedule_ability: "ReActLifeSchedule"
+

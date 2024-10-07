@@ -2,7 +2,7 @@
 Author: Huang Weitao
 Date: 2024-10-05 00:38:39
 LastEditors: Huang Weitao
-LastEditTime: 2024-10-06 16:14:11
+LastEditTime: 2024-10-06 17:37:43
 Description: 
 """
 
@@ -41,33 +41,26 @@ async def post_message(target_agent_name: str, content: str):
 
 @app.get("/get_message")
 async def get_message(position: int):
-    # try:
-    agent_name, message, next_position_tag, new_message = None, None, 0, False
-    if position == 0:
-        message = FileUploadMessage(send_from="bob", file_name="1.md", file_content=open("1.md", "rb").read())
-        agent_name, message, next_position_tag, new_message = "Bob", message, 1, True
-    # agent_name,message,next_position_tag,has_next = multi_agent_env_server.get_message(position)
-    if message:
-        message = message.to_json()
-    else:
-        message = "None"
-    return {
-        "agent_name": agent_name,
-        "message": message,
-        "next_position_tag": next_position_tag,
-        "new_message": new_message,
-    }
-
-
-# except Exception as e:
-#     print(3)
-#     return {"message":str(e),"next_position_tag":position,"has_next":False}
+    try:
+        agent_name, message, next_position_tag, new_message = multi_agent_env_server.get_message(position)
+        if message:
+            message = message.to_json()
+        else:
+            message = "None"
+        return {
+            "agent_name": agent_name,
+            "message": message,
+            "next_position_tag": next_position_tag,
+            "new_message": new_message,
+        }
+    except Exception as e:
+        print(3)
+        return {"message": str(e), "next_position_tag": position, "has_next": False}
 
 
 @app.post("/get_agent_list")
 async def get_agent_list():
-    return {"agent_list": ["bob"]}
-    # return {"agent_list":multi_agent_env_server.get_agent_list()}
+    return {"agent_list": multi_agent_env_server.get_agent_list()}
 
 
 if __name__ == "__main__":

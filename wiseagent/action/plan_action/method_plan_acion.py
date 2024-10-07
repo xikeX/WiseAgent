@@ -111,7 +111,7 @@ Requirment: Search the arxiv article contain LLM and Agent.
 [
    {
         "action_name": "ArxivAction",
-        "action_method": "search_arxiv_article",
+        "action_method": "search_arxiv_paper",
         "args": {
             "search_terms": "\\\"LLM\\\" AND \\\"Agent\\\"",
             "pass_days": 1

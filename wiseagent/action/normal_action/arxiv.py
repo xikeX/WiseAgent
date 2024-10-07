@@ -81,7 +81,7 @@ PAPER_ITEM_MARKDOWN_FORMAT = """
 - 作者 : {author}
 - 标签 : {labels}
 - 链接 : {link}
-摘要: {abstract_translated}
+摘要: {abstract}
 
 """
 
@@ -111,7 +111,7 @@ class ArxivAction(BaseAction):
     ## class action -----------------------------------
 
     @action()
-    def search_arxiv_article(self, search_terms: str, pass_days: int = 1):
+    def search_arxiv_paper(self, search_terms: str, pass_days: int = 1):
         """Builds the URL for an advanced search on arXiv.org.
 
         Args:
@@ -156,7 +156,7 @@ class ArxivAction(BaseAction):
             article_information_description += f"Title: {title}\nAuthors: {authors}\nAbstract: {abstract}\n\n"
         return (
             article_information_description
-            + f"The size of the data is {len(article_information_list)}. This action are completed successfully."
+            + f"The size of the data is {len(article_information_list)}. Search arxiv paper task finished."
         )
 
     @action()
@@ -187,7 +187,7 @@ class ArxivAction(BaseAction):
             }
             for index, (arxiv_id_list, title, authors, abstract) in enumerate(arxiv_data.current_arxiv_data)
         ]
-
+        paper_data = paper_data[:2]
         # Translate and classify papers
         for item in tqdm(paper_data, total=len(paper_data)):
             self.translate_and_classify(item)
@@ -206,7 +206,7 @@ class ArxivAction(BaseAction):
 
         # Upload the Excel file to the reporter
         with open(save_excel_path, "rb") as f:
-            agent_data.monitor.add_message(FileUploadMessage(file_path=save_excel_path, file_content=f.read()))
+            agent_core.monitor.add_message(FileUploadMessage(file_name=save_excel_path.name, file_content=f.read()))
 
         # Generate and save Markdown
         markdown_path = save_excel_path.with_suffix(".md")
@@ -216,9 +216,11 @@ class ArxivAction(BaseAction):
         for key in classified_data:
             f.write(f"## {key} : {len(classified_data[key])}篇\n")
             for index, item in enumerate(classified_data[key]):
+                labels = "|".join(item["label"])
                 f.write(
                     PAPER_ITEM_MARKDOWN_FORMAT.format(
                         index=index + 1,
+                        labels=labels,
                         title=item["title"],
                         time=item["time"],
                         author=item["author"],
@@ -230,9 +232,9 @@ class ArxivAction(BaseAction):
 
         # Upload the Markdown file to the reporter
         with open(markdown_path, "rb") as f:
-            agent_data.monitor.add_message(FileUploadMessage(file_path=markdown_path, file_content=f.read()))
+            agent_core.monitor.add_message(FileUploadMessage(file_name=markdown_path.name, file_content=f.read()))
 
-        return f"Save the arxiv paper to excel successfully. The path is {save_excel_path}."
+        return f"Save the arxiv paper task finished. The path is {save_excel_path}."
 
     # class tools for this action --------------------------------------------------
 
