@@ -1,3 +1,10 @@
+"""
+Author: Huang Weitao
+Date: 2024-10-06 16:52:56
+LastEditors: Huang Weitao
+LastEditTime: 2024-10-11 21:05:47
+Description: 
+"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -47,12 +54,18 @@ class MultiAgentEnvServer:
             tuple: (message,next_position_tag,has_next)
         """
         if position_tag >= len(self.message_cache):
-            return None, None, position_tag, False
-        return self.message_cache[position_tag][0], self.message_cache[position_tag][1], position_tag + 1, True
+            return None, position_tag, False
+        next_position_tag = len(self.message_cache)
+        return self.message_cache[position_tag][0], self.message_cache[position_tag][1], next_position_tag, True
         #  this will be loop for frontend to get the newest message
 
     def get_agent_list(self):
-        return self.agent_name_list
+        rsp = []
+        agent_code = get_agent_core()
+        for agent in agent_code.agent_list:
+            if agent.name.lower() in self.agent_name_list:
+                rsp.append({"name": agent.name.lower(), "active": 0 if agent.is_sleep else 1})
+        return rsp
 
 
 def create_app(run_mode: str = None):

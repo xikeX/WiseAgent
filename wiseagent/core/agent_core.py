@@ -19,7 +19,6 @@ from typing import Any, List
 
 from pydantic import BaseModel, Field
 
-from wiseagent.agent_data.base_agent_data import AgentData
 from wiseagent.common.annotation import singleton
 from wiseagent.config import GLOBAL_CONFIG
 
@@ -36,7 +35,7 @@ class AgentCore(BaseModel):
     monitor: Any = Field(default=None)
 
     # The agent list in current system
-    agent_list: List[AgentData] = []
+    agent_list: List[Any] = []
 
     # The workflow controller of the system
     # workflow_controller: Any = Field(default=None)
@@ -103,7 +102,7 @@ class AgentCore(BaseModel):
         for function in self._prepare_function_list:
             function()
 
-    def init_agent(self, agent_data: AgentData) -> AgentData:
+    def init_agent(self, agent_data):
         """init the agent data. It will init the action data, get action description, add the agent to the agent list."""
 
         # Check the agent is init
@@ -138,7 +137,7 @@ class AgentCore(BaseModel):
             self.agent_list.append(agent_data)
         return agent_data
 
-    def start_agent_life(self, agent_data: AgentData):
+    def start_agent_life(self, agent_data):
         if agent_data.is_init is False:
             raise Exception("Agent is not init")
         self.life_manager.life(agent_data)

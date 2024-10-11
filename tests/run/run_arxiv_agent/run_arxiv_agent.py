@@ -30,6 +30,6 @@ def main():
     env._listen_user_input()
 
 
-# @Bob 收集一下包含LLM和Agent的论文，最近3天的，保存起来，名字就叫‘LLM_Agent 2024-10-01 2024-10-03 .xlsx
+# @Bob 收集一下包含LLM和Agent的论文，最近7天的，保存起来，名字就叫‘LLM_Agent 2024-10-03 2024-10-10.xlsx’
 if __name__ == "__main__":
     main()

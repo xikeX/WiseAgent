@@ -16,6 +16,61 @@ from wiseagent.protocol.message import EnvironmentHandleType, Message
 # Set the page configuration
 st.set_page_config(page_title="WiseAgent", layout="wide")
 float_init()
+CODE_TYPE = {
+    "py": "python",
+    "js": "javascript",
+    "java": "java",
+    "c": "c",
+    "cpp": "c++",
+    "cs": "c#",
+    "go": "go",
+    "rb": "ruby",
+    "php": "php",
+    "pl": "perl",
+    "swift": "swift",
+    "m": "objective-c/objective-c++",
+    "scala": "scala",
+    "kt": "kotlin",
+    "rs": "rust",
+    "ts": "typescript",
+    "lua": "lua",
+    "sh": "bash/shell",
+    "hs": "haskell",
+    "erl": "erlang",
+    "exs": "elixir",
+    "fs": "f#",
+    "r": "r",
+    "ml": "ocaml",
+    "vb": "visual basic .net",
+    "groovy": "groovy",
+    "dart": "dart",
+    "sol": "solidity (ethereum)",
+    "elm": "elm",
+    "clj": "clojure",
+    "cljs": "clojurescript",
+    "fsx": "f# script",
+    "md": "markdown",
+    "html": "html",
+    "css": "css",
+    "json": "json",
+    "yml": "yaml",
+    "xml": "xml",
+    "txt": "text",
+    "log": "log",
+    "ini": "ini",
+    "conf": "ini",
+    "cfg": "ini",
+    "properties": "ini",
+    "toml": "toml",
+    "csv": "csv",
+    "tsv": "tsv",
+    "md": "markdown",
+    "rst": "reStructuredText",
+    "tex": "latex",
+    "bib": "bibtex",
+    "rmd": "R markdown",
+    "ipynb": "jupyter notebook",
+}
 
 
 @dataclass
@@ -30,7 +85,7 @@ class WebData:
     environment_list = ["MultiAgentEnvironment"]
     # Current active chat agent. cur
     current_chat_agent = None
-    agent_list = []
+    agent_list = []  # [{"name":agent_name,"active":0/1}]
     # The agents file that has been loaded
     agent_yaml_file = []
 
@@ -69,11 +124,6 @@ def display_sidebar_ui():
 
         # Get or initialize web data
         web_data = get_web_data()
-        st.button(
-            "Stop Polling" if st.session_state.polling else "Start Polling",
-            on_click=lambda: st.session_state.update(polling=not st.session_state.polling),
-            use_container_width=True,
-        )
 
         # Environment selection
         st.subheader("Environment List")
@@ -130,39 +180,43 @@ def display_sidebar_ui():
             response = requests.post("http://localhost:5000/get_agent_list")
             if response.status_code == 200:
                 web_data.agent_list = response.json()["agent_list"]
+                for agent in web_data.agent_list:
+                    if agent["active"] != 0:
+                        st.session_state.polling = True
+                        break
             else:
                 st.toast("Failed to get agent list")
         except Exception as e:
             st.toast(f"Failed to get agent list: {str(e)}")
             web_data.agent_list = []
-
+        print(web_data.agent_list)
         # Display buttons for each available agent
-        for agent_name in web_data.agent_list:
-            if web_data.current_chat_agent == agent_name:
+        for agent in web_data.agent_list:
+            if agent["active"] > 0:
                 col1, col2 = st.columns([1, 10])
 
                 with col1:
                     # Display an arrow if this is the currently selected agent
-                    st.subheader("→")
+                    st.write(":rocket:")
 
                 with col2:
                     #  Button to select the agent
                     st.button(
-                        agent_name,
+                        agent["name"],
                         on_click=change_chat_window,
                         args=(
                             "agent",
-                            agent_name,
+                            agent["name"],
                         ),
                         use_container_width=True,
                     )
             else:
                 st.button(
-                    agent_name,
+                    agent["name"],
                     on_click=change_chat_window,
                     args=(
                         "agent",
-                        agent_name,
+                        agent["name"],
                     ),
                     use_container_width=True,
                 )
@@ -192,30 +246,34 @@ def chat_box(web_data, window_height):
     # Reset chat button if chat is aborted
     if prompt := st.chat_input():
         # Chat input for user to send messages
-        target_agent_name = prompt.split(" ")[0].split("@")[1]
-        content = " ".join(prompt.split(" ")[1:])
-        if target_agent_name in web_data.agent_list:
+        try:
+            target_agent_name = prompt.split(" ")[0].split("@")[1]
+            content = " ".join(prompt.split(" ")[1:])
+        except:
+            target_agent_name = ""
+            content = ""
+        if target_agent_name in [agent["name"] for agent in web_data.agent_list]:
             try:
                 response = requests.post(
                     "http://localhost:5000/post_message",
                     params={"target_agent_name": target_agent_name, "content": content},
                 )
                 if response.status_code == 200:
-                    st.session_state.chat_messages.append({"role": "assistant", "content": content})
+                    st.session_state.chat_messages.append({"role": "user", "content": content})
                     st.rerun()
                 else:
                     st.toast(f"Agent {target_agent_name} not found")
             except Exception as e:
                 st.toast(f"Error posting message: {e}")
         else:
-            st.toast(f"Agent {target_agent_name} not found")
+            st.toast(f"Agent {target_agent_name} not found.Please input the format '@agent_name message'")
     float_parent()
 
 
 def workspace_box(web_data, window_height):
     """Initialize the workspace box"""
     tab_bar_data = []
-    for agent_name in web_data.agent_list:
+    for agent_name in [agent["name"] for agent in web_data.agent_list]:
         tab_bar_data.append(stx.TabBarItemData(id=agent_name, title=agent_name, description="Tasks to take care of"))
 
     # Add a default tab if no agents are available
@@ -223,7 +281,9 @@ def workspace_box(web_data, window_height):
         tab_bar_data.append(stx.TabBarItemData(id="No agent", title="No agent", description="Please add agent"))
 
     # Select the active agent tab
-    chosen_agent_name = stx.tab_bar(data=tab_bar_data, default=0)
+    chosen_agent_name = stx.tab_bar(
+        data=tab_bar_data, default=web_data.agent_list[0]["name"] if web_data.agent_list else "No agent"
+    )
 
     with st.container(height=window_height - 330):
         if chosen_agent_name in st.session_state.agent_workspace_map:
@@ -232,31 +292,31 @@ def workspace_box(web_data, window_height):
                 workspace_tabs_name.extend(["preview markdown file"])
 
             if len(workspace_tabs_name) != 0:
-                with st.container(border=False):
-                    workspace_name = st.selectbox(
-                        "select observation",
-                        workspace_tabs_name,
-                    )
+                workspace_name = st.selectbox(
+                    "select observation",
+                    workspace_tabs_name,
+                )
 
                 if workspace_name == "file_upload":
-                    i = 1
-                    for message in st.session_state.agent_workspace_map[chosen_agent_name][workspace_name]:
+                    for index, message in enumerate(
+                        st.session_state.agent_workspace_map[chosen_agent_name][workspace_name]
+                    ):
                         base64_data = message["file_content"]
                         _bytes = base64.b64decode(base64_data.encode(encoding="utf-8"))
-                        print(f"{i}.{message}")
+                        print(f"{index}.{message}")
                         st.download_button(
                             label=f"Download {message['file_name']} file",
                             file_name=message["file_name"],
                             data=_bytes,
                             use_container_width=True,
-                            key=message["file_name"] + str(i),
+                            key=message["file_name"] + str(index),
                         )
-                        i += 1
                 elif workspace_name == "preview markdown file":
                     file_list = [
                         file
                         for file in st.session_state.agent_workspace_map[chosen_agent_name]["file_upload"]
-                        if file["file_name"].endswith(".md")
+                        if file["file_name"].split(".")[-1]
+                        in ["html", "md", "txt", "py", "json", "css", "js", "xml", "vue"]
                     ]
                     file_name_list = [file["file_name"] for file in file_list]
                     file_name = st.selectbox("Select a file to preview", file_name_list, key="file_name")
@@ -271,10 +331,10 @@ def workspace_box(web_data, window_height):
                         ):
                             _bytes = base64.b64decode(base64_data.encode(encoding="utf-8"))
                             content = _bytes.decode(encoding="utf-8")
-                            st.markdown(content)
+                            st.markdown(f"```{CODE_TYPE.get(file_name.split('.')[-1], '')}\n" + content + "\n```")
                 else:
                     st.write(st.session_state.agent_workspace_map[chosen_agent_name][workspace_name])
-    float_parent()
+    # float_parent()
 
 
 def main_windows():
@@ -319,18 +379,21 @@ def abort_chat(error_message: str):
     st.rerun()
 
 
-def handle_message(agent_name: str, message: Message):
-    agent_name = agent_name.lower()
+main()
 
-    def add_to_workspace(agent_name, env_handle_type, message):
+
+def handle_message(message: Message):
+    agent_name = message["send_from"].lower()
+
+    def add_to_workspace(_agent_name, env_handle_type, message):
         if message["content"].startswith("```json"):
             print(message["content"][7:-3])
             message["content"] = json.loads(message["content"][7:-3])
-        if agent_name not in st.session_state.agent_workspace_map:
-            st.session_state.agent_workspace_map[agent_name] = {}
-        if env_handle_type not in st.session_state.agent_workspace_map[agent_name]:
-            st.session_state.agent_workspace_map[agent_name][env_handle_type] = []
-        st.session_state.agent_workspace_map[agent_name][env_handle_type].append(message)
+        if _agent_name not in st.session_state.agent_workspace_map:
+            st.session_state.agent_workspace_map[_agent_name] = {}
+        if env_handle_type not in st.session_state.agent_workspace_map[_agent_name]:
+            st.session_state.agent_workspace_map[_agent_name][env_handle_type] = []
+        st.session_state.agent_workspace_map[_agent_name][env_handle_type].insert(0, message)
 
     if message["env_handle_type"] in [
         EnvironmentHandleType.COMMAND,
@@ -340,12 +403,28 @@ def handle_message(agent_name: str, message: Message):
         EnvironmentHandleType.FILE_UPLOAD,
     ]:
         add_to_workspace(agent_name, message["env_handle_type"], message)
-        print("handel other")
     elif message["env_handle_type"] == EnvironmentHandleType.COMUNICATION:
         st.session_state.chat_messages.append(
             {"role": message["send_from"], "content": message["send_to"] + message["content"]}
         )
         print("handle communcate")
+    elif message["env_handle_type"] == EnvironmentHandleType.SLEEP:
+        agent_name = message["send_from"]
+        active_agent_number = 0
+        for agent in get_web_data().agent_list:
+            if agent["name"] == agent_name:
+                agent["active"] = 0
+            if agent["active"] != 0:
+                active_agent_number += 1
+        if active_agent_number == 0:
+            st.session_state.polling = False
+
+    elif message["env_handle_type"] == EnvironmentHandleType.WAKEUP:
+        agent_name = message["send_from"]
+        for agent in get_web_data().agent_list:
+            if agent["name"] == agent_name:
+                agent["active"] = 1
+        st.session_state.polling = True
     else:
         print("handel error")
 
@@ -357,15 +436,18 @@ def fetch_message_from_backend():
         )
         if response.status_code == 200:
             data = response.json()
-            message = data["message"]
+            message_list = data["message_list"]
             next_position_tag = data["next_position_tag"]
-            agent_name = data["agent_name"]
             new_message = bool(data["new_message"])
             if new_message:
-                message = json.loads(message)
-                handle_message(agent_name, message)
+                message_list = json.loads(message_list)
+                for message in message_list:
+                    handle_message(message)
                 st.session_state.current_message_id = next_position_tag
                 st.rerun()
+                return True
+            else:
+                return False
         else:
             st.error("Failed to get message from the backend.")
     except Exception as e:
@@ -375,10 +457,10 @@ def fetch_message_from_backend():
 def start_polling():
     """Start polling the backend for new messages"""
     while True:
-        fetch_message_from_backend()
-        time.sleep(3)
+        has_new_message = fetch_message_from_backend()
+        if not has_new_message:
+            time.sleep(3)
 
 
-main()
 if st.session_state.polling:
     start_polling()
