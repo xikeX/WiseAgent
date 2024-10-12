@@ -5,8 +5,6 @@ LastEditors: Huang Weitao
 LastEditTime: 2024-10-05 11:13:57
 Description: 
 """
-
-import json
 import time
 from random import randint
 from typing import List
@@ -85,15 +83,15 @@ class ReActLifeSchedule(BaseLifeScheduler):
                 else:
                     rsp = f"{command.action_method} not found"
                 if rsp:
-                    agent_data.add_memory(UserMessage(contnt=rsp))
+                    agent_data.add_memory(AIMessage(content=rsp))
                 # After executed the action, if the agent is dead, then break the loop
                 logger.info(f"{command.action_method} executed. " + rsp)
 
             # Judge if the task is finished (To prevent the agent from being stuck in a loop)
-            prompt = "Do you finish your task ? output:Yes/No"
+            prompt = "Do task finished? Analysize what you have done, Output <END> to stop and <CONTINUE> to continue."
             rsp = self.llm_ask(prompt, agent_data.short_term_memory)
-            if any([tag in rsp for tag in ["Yes", "yes"]]):
-                logger.info(f"Agent {agent_data.name} finsihed  task")
+            if any([tag in rsp for tag in ["<END>", "<End>", "<end>"]]):
+                logger.info(f"Agent {agent_data.name} finsihed task")
                 agent_data.sleep()
 
             # Sleep, forbidding the agent act too fast, and lead to cost too much money

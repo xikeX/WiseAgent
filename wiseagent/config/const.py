@@ -21,9 +21,9 @@ current_file_abs_path = os.path.abspath(__file__)
 # Agent System Path
 ROOT_PATH = Path(current_file_abs_path).parent.parent
 CONFIG_PATH = ROOT_PATH / "config"
-WORKING_DIR = ROOT_PATH / "workspace"
+WORKING_DIR = ROOT_PATH.parent / "workspace"
 
 # May be used in the future
 DATA_PATH = ROOT_PATH.parent / "data"
 LOG_PATH = ROOT_PATH.parent / "log"
-TEMP_PATH = ROOT_PATH / "temp"
+TEMP_PATH = ROOT_PATH.parent / "temp"

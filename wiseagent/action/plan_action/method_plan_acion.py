@@ -129,6 +129,12 @@ class MethodPlanActionData(BaseActionData):
     plan_list: List[dict] = []
     current_plan_index: int = 0
 
+    def __init__(self, agent_data: AgentData):
+        super().__init__()
+        # if agent_data has experience, use it, otherwise use the default experience
+        self.expericence = agent_data.get_experience("MethodPlanAction") or self.expericence
+        pass
+
 
 @singleton
 class MethodPlanAction(BasePlanAction):
@@ -226,7 +232,7 @@ class MethodPlanAction(BasePlanAction):
         return res
 
     def init_agent(self, agent_data: AgentData):
-        agent_data.set_action_data("MethodPlanAction", MethodPlanActionData())
+        agent_data.set_action_data("MethodPlanAction", MethodPlanActionData(agent_data))
 
 
 def get_action():

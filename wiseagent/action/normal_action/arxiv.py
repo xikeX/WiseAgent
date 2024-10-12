@@ -187,7 +187,6 @@ class ArxivAction(BaseAction):
             }
             for index, (arxiv_id_list, title, authors, abstract) in enumerate(arxiv_data.current_arxiv_data)
         ]
-        paper_data = paper_data[:2]
         # Translate and classify papers
         for item in tqdm(paper_data, total=len(paper_data)):
             self.translate_and_classify(item)

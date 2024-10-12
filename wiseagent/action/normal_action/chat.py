@@ -25,7 +25,7 @@ class Chat(BaseAction):
         super().__init__()
 
     @action()
-    def chat(self, send_to: str, message: str, wait_for_response):
+    def chat(self, send_to: str, message: str, wait_for_response=False):
         """
         Chat with another agent or human. If there is no task to do, you can use wait_for_response to wait for a response or a new task.
 

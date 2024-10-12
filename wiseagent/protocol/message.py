@@ -24,6 +24,8 @@ class EnvironmentHandleType(str, Enum):
     COMMAND = "command"
     BASE_ACTION_MESSAGE = "base_action_message"
     FILE_UPLOAD = "file_upload"
+    SLEEP = "sleep"
+    WAKEUP = "wakeup"
 
 
 class LLMHandleType(str, Enum):
@@ -118,6 +120,14 @@ class FileUploadMessage(Message):
         data = self._to_json(exclude=["file_content"])
         data["file_content"] = base64.b64encode(self.file_content).decode("utf-8")
         return json.dumps(data, ensure_ascii=False)
+
+
+class SleepMessage(Message):
+    env_handle_type: str = EnvironmentHandleType.SLEEP
+
+
+class WakeupMessage(Message):
+    env_handle_type: str = EnvironmentHandleType.WAKEUP
 
 
 if __name__ == "__main__":

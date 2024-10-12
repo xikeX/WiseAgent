@@ -22,12 +22,12 @@ action_module_path:
   - "wiseagent.action.plan_action.method_plan_acion"
   # memory action
   - "wiseagent.action.memory_action.knowledge_memory"
-  - "wiseagent.action.memory_action.short_term_memory_action"
   - "wiseagent.action.memory_action.long_term_memory_action"
   # normal action
   - "wiseagent.action.normal_action.chat"
   - "wiseagent.action.normal_action.wechat"
   - "wiseagent.action.normal_action.arxiv"
+  - "wiseagent.action.normal_action.write_code"
 
 
 # LLM

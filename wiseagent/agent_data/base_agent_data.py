@@ -18,7 +18,7 @@ from wiseagent.agent_data.base_agent_data_prompt import AGENT_SYSTEM_PROMPT
 from wiseagent.common.yaml_config import YamlConfig
 from wiseagent.config import logger
 from wiseagent.config.const import WORKING_DIR
-from wiseagent.protocol.message import Message
+from wiseagent.protocol.message import Message, SleepMessage, WakeupMessage
 
 # The current agent data.
 # Do not modify __CURRENT_AGENT_DATA directly in other files, as it may cause unexpected errors.
@@ -42,6 +42,8 @@ class AgentData(BaseModel, YamlConfig):
     tools_description: str = ""  # This will be initialize in the agent_core.init_agent
     agent_instructions: str = ""
     agent_example: str = ""
+
+    action_experience: dict = {}  #
 
     __agent_global_working_dir: str = WORKING_DIR
 
@@ -114,6 +116,9 @@ class AgentData(BaseModel, YamlConfig):
         )
         return system_prompt
 
+    def get_experience(self, action_name):
+        return self.action_experience.get(action_name, None)
+
     def get_working_dir(self):
         return self.__agent_global_working_dir
 
@@ -131,9 +136,17 @@ class AgentData(BaseModel, YamlConfig):
         return self._is_sleep
 
     def sleep(self):
+        from wiseagent.core.agent_core import get_agent_core
+
+        monitor = get_agent_core().get_monitor()
+        monitor.add_message(SleepMessage(send_from=self.name))
         self._is_sleep = True
 
     def wake_up(self):
+        from wiseagent.core.agent_core import get_agent_core
+
+        monitor = get_agent_core().get_monitor()
+        monitor.add_message(WakeupMessage(send_from=self.name))
         self._is_sleep = False
 
     def add_memory(self, message: Union[Message], from_env=False):
