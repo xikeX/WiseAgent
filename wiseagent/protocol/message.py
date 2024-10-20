@@ -7,6 +7,7 @@ Description:
 """
 import base64
 import json
+from datetime import datetime
 from enum import Enum
 from typing import Any, List
 
@@ -55,6 +56,8 @@ class Message(BaseModel):
 
             agent_data = get_current_agent_data()
             self.send_from = agent_data.name
+        if self.time_stamp == "":
+            self.time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         if self.send_to and any(char.isupper() for char in self.send_to):
             logger.warning(f"send_to {self.send_to} contains uppercase letters, convert to lowercase")
             self.send_to = self.send_to.lower()

@@ -6,8 +6,11 @@ from humanfriendly import parse_size
 
 from wiseagent.action.action_annotation import action
 from wiseagent.action.base import BaseAction, BaseActionData
+from wiseagent.agent_data.base_agent_data import get_current_agent_data
 from wiseagent.common.annotation import singleton
-from wiseagent.common.file_io import write_file
+from wiseagent.common.file_io import read_rb, write_file
+from wiseagent.core.agent_core import get_agent_core
+from wiseagent.protocol.message import CommunicationMessage, FileUploadMessage, Message
 
 GENERATE_LONG_DOCUMENT_PROMPT = """
 You are a book writing expert, you need to complete a book.
@@ -203,6 +206,8 @@ class LongDocumentGenerateAction(BaseAction):
         if content is "":
             return "No content generated"
         write_file(save_path, content)
+        agent_core = get_agent_core()
+        agent_core.monitor.add_message(FileUploadMessage(file_name=save_path, file_content=read_rb(save_path)))
         return f"document generated successfully. The path is {save_path}"
 
     @action()
@@ -218,7 +223,11 @@ class LongDocumentGenerateAction(BaseAction):
         )
         respond = self.llm_ask(generate_outline_prompt)
         outline = self.parse_outline(respond)
-        # return  outline
+        agent_core = get_agent_core()
+        report_message = CommunicationMessage(
+            content=f"generate_outline executed successfully.\nThe outline is:\n{outline}"
+        )
+        agent_core.monitor.add_message(report_message)
         return f"generate_outline executed successfully.\nThe outline is:\n{outline}"
 
     def parse_outline(self, xml_outline):
