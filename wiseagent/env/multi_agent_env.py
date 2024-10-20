@@ -36,7 +36,11 @@ class MultiAgentEnv(BaseEnvironment):
 
     def __init__(self, agent_name_list: list[str] = None):
         super().__init__()
-        """Initialize the MultiAgentReporter with a list of agents."""
+        """Initialize the MultiAgentReporter with a list of agents.
+        
+        Args:
+            agent_name_list (list[str]): A list of agent names to report to. If none, all agents will be reported to.
+        """
         self.file_lock = threading.Lock()
         # Initialize agent core and agent name list
 
