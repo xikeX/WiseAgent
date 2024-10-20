@@ -47,76 +47,16 @@ The json format is:
 ``
 """
 EXPERIENCE = """
-Example 1:
-Requirment: The user asks me to respond to the question: "What is 2Co + 2Fe = ?"
-Thought: I need to calculate the result of the equation 2Co + 2Fe = ? This is a simple arithmetic problem. I will reply to the user with the result.
-```json
+output format:
 [
     {
         "action_name": "Chat",
         "action_method" : "chat",
         "args": {
-            "send_to": "user",
-            "message": "The result of the equation 2Co + 2Fe = ? is 4Co + 2Fe. But I thik Coffee is better. Ah...",
-            "wait_for_response": true
+            "agrs_name": "args_value",
+            ...
         }
     }
-]
-
-Example 2:
-Requirment: The user asks me to respond to the question: "Who is the author of the book ?'
-Thought: I do not kown the user is asking for which book. I need to ask the user for more information. I will reply to the user with the question.
-```json
-[
-    {
-        "action_name": "Chat",
-        "action_method" : "chat",
-        "args": {
-            "send_to": "user",
-            "message": "Which book are you asking for?"
-            "wait_for_response": true
-        }
-    }
-]
-
-Example 3:
-Requirment: I do not have received any request from the user.
-Thought: There is no requirement, so i will use the wait for task action to wait for the user's request.
-```json
-[
-    {
-        "action_name":"MethodPlanAction",
-        "action_method":"wait_for_task"
-    }
-]
-```
-Example 4:
-Requirment: Open the wechat and send message to the "溪客", message is "今晚10点开会"
-```json
-[
-    {
-        "action_name": "WeChatAction",
-        "action_method" : "send_wechat_message",
-        "args": {
-            "friend_name": "溪客",
-            "message": "今晚10点开会"
-        }
-    }
-]
-```
-
-Example 5:
-Requirment: Search the arxiv article contain LLM and Agent.
-```json
-[
-   {
-        "action_name": "ArxivAction",
-        "action_method": "search_arxiv_paper",
-        "args": {
-            "search_terms": "\\\"LLM\\\" AND \\\"Agent\\\"",
-            "pass_days": 1
-        }
-    } 
 ]
 """
 

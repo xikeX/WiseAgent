@@ -28,7 +28,7 @@ def get_dict_description(action) -> dict:
         dict: The description of the action class.
     """
     result = {
-        "class_name": action.__class__.__name__,
+        "class_name": action.__name__,
         "class_description": action.__doc__ or "",
         "class_methods": defaultdict(dict),
     }
