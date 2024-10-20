@@ -200,8 +200,10 @@ class LongDocumentGenerateAction(BaseAction):
                         line for line in self.parse_content(response).splitlines() if not line.startswith("#")
                     )
                     content += f"{chapter_content}\n"
+        if content is "":
+            return "No content generated"
         write_file(save_path, content)
-        return content
+        return f"document generated successfully. The path is {save_path}"
 
     @action()
     def generate_outline(self, topic, description=None, language="chinese"):
@@ -216,7 +218,8 @@ class LongDocumentGenerateAction(BaseAction):
         )
         respond = self.llm_ask(generate_outline_prompt)
         outline = self.parse_outline(respond)
-        return outline
+        # return  outline
+        return f"generate_outline executed successfully.\nThe outline is:\n{outline}"
 
     def parse_outline(self, xml_outline):
         """Parse outline from xml
@@ -268,6 +271,8 @@ class LongDocumentGenerateAction(BaseAction):
     def parse_content(self, respond):
         start_tag = "<content>"
         end_tag = "</content>"
+        if start_tag == -1 and end_tag == -1:
+            return respond
         return respond.split(start_tag)[1].split(end_tag)[0]
 
 

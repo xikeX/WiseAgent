@@ -168,7 +168,7 @@ class AgentData(BaseModel, YamlConfig):
             if from_env:
                 self.uncheck_message_number += 1
 
-    def get_last_memory(self, last_k: int = 10):
+    def get_last_memory(self, last_k: int = 30):
         return self.short_term_memory[-last_k:]
 
     def observe(self, with_reset: bool = False):

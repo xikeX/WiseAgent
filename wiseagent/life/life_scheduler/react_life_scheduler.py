@@ -83,7 +83,7 @@ class ReActLifeSchedule(BaseLifeScheduler):
                 else:
                     rsp = f"{command.action_method} not found"
                 if rsp:
-                    agent_data.add_memory(AIMessage(content=rsp))
+                    agent_data.add_memory(UserMessage(content=rsp))
                 # After executed the action, if the agent is dead, then break the loop
                 logger.info(f"{command.action_method} executed. " + rsp)
 
