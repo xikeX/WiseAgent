@@ -182,7 +182,9 @@ class LongDocumentGenerateAction(BaseAction):
                     chapter_title = "\n".join(f"{'#' * (i + 2)} {t}" for i, t in enumerate(title) if t)
 
                     # Get the next line as the chapter description, if available
-                    chapter_description = outline_lines[i + 1] if i + 1 < len(outline_lines) else ""
+                    chapter_description = ""
+                    if i + 1 < len(outline_lines) and not outline_lines[i + 1][0].isdigit():
+                        chapter_description = outline_lines[i + 1] if i + 1 < len(outline_lines) else ""
 
                     # Generate the prompt for the LLM
                     prompt = GENERATE_LONG_DOCUMENT_PROMPT.format(
