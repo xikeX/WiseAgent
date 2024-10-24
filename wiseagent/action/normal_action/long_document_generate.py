@@ -203,7 +203,7 @@ class LongDocumentGenerateAction(BaseAction):
                         line for line in self.parse_content(response).splitlines() if not line.startswith("#")
                     )
                     content += f"{chapter_content}\n"
-        if content is "":
+        if not content:
             return "No content generated"
         write_file(save_path, content)
         agent_core = get_agent_core()

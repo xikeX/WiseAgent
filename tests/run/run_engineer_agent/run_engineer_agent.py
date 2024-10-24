@@ -32,7 +32,7 @@ def main():
     env._listen_user_input()
     # with agent_data_list[0]:
     #     write_code_action = WriteCodeAction()
-    #     rsp = write_code_action.wirte_code(
+    #     rsp = write_code_action.write_code(
     #         file_list=[
     #             "2048_game/index.html",
     #             "2048_game/main.js",
@@ -55,5 +55,10 @@ def main():
 # @bob 实现一个扫雷游戏
 # @bob 写一个计算器，要求涵盖常见所有的运算，并且界面美观。
 # @bob 写一个登录界面，要求界面美观，并且实现登录功能。
+# @bob 分析一下G:\Crop_Recommendation.csv"文件,分析的话，只需要读取前5条,这个是用一些土壤的数据，预测种植什么作物比较好。使用一个随机深林去预测，然后写一个streamlit 网页，能够输入一些土壤数据，然后输出预测结果。
+# @bob “G:\WiseAgent_V3\WiseAgent\workspace\crop_prediction\app.py”读一下这个streamlit 的app.py 文件，这是一个利用土壤数据预测，种植什么作物比较好的数据集，请你美化界面，每一个参数要有英文说明。并且要求好用，不要有侧边栏。
+# @bob "action_name": "WriteCodeAction", "action_method": "write_code",这个才是正确用法
+# @Bob G:\Crop_Recommendation.csv"文件,可以先看一下前五条，这个是用一些土壤的数据，预测种植什么作物比较好的数据。你需要使用几种不同的方法去预测，然后写一个streamlit 网页，能够输入一些土壤数据，然后输出预测结果。这个网页包括3个tab页面，第一个tab页面是项目的说明；第二个tab页面是输入土壤数据：这个预测tab中，分为左右两部分，左边是输入土壤数据，右边是预测结果，需要有预测按钮，预测后给出最合适的农作物，和前3个合适作物的预测分数；第三个tab页面是预测结果，这个页面是数据分析界面，你需要分析原始数据的分布，给出一些分析用的图表。
+# @Bob 之前预测的东西也要有。
 if __name__ == "__main__":
     main()

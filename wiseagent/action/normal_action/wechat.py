@@ -30,14 +30,15 @@ class WeChatAction(BaseAction):
     action_description: str = " this class is to do wechat action."
 
     def init_agent(self, agent_data: AgentData):
-        agent_data.set_action_data(self.name, WeChatActionData())
+        agent_data.set_action_data(self.action_name, WeChatActionData())
         global wechat
         # will init the wechat in main thread
         if wechat is None:
             wechat = WeChat()
 
-    def get_wechat_handle(self, agent_data: AgentData):
-        wechat_action_data = agent_data.get_action_data(self.name)
+    def get_wechat_handle(self):
+        agent_data = get_current_agent_data()
+        wechat_action_data = agent_data.get_action_data(self.action_name)
         if wechat_action_data.wechat_handle is None:
             wechat_action_data.wechat_handle = wechat
         return wechat_action_data.wechat_handle
@@ -46,8 +47,8 @@ class WeChatAction(BaseAction):
     # @action()
     # def get_wachat_friend_list(self):
     #     """get the friend list in wechat"""
-    #     agent_data = get_current_agent_data()
-    #     wechat:WeChat = self.get_wechat_handle(agent_data)
+    #
+    #     wechat:WeChat = self.get_wechat_handle()
     #     friend_list = wechat.GetAllFriends()
     #     friend_desciption = ""
     #     for index,friend in enumerate(friend_list):
@@ -61,8 +62,7 @@ class WeChatAction(BaseAction):
         Args:
             friend_name (str): the friend name you want to get chat history. you must confirm the friend name is in your friend list.
         """
-        agent_data = get_current_agent_data()
-        wechat: WeChat = self.get_wechat_handle(agent_data)
+        wechat: WeChat = self.get_wechat_handle()
         # switch to chat page
         wechat.ChatWith(friend_name)
         chat_history = wechat.GetAllMessage()
@@ -82,8 +82,8 @@ class WeChatAction(BaseAction):
             message (str): the message you want to send. you can use \n to split the message.
             friend_name (str): the friend name you want to send message. you must confirm the friend name is in your friend list.
         """
-        agent_data = get_current_agent_data()
-        wechat: WeChat = self.get_wechat_handle(agent_data)
+
+        wechat: WeChat = self.get_wechat_handle()
         wechat.SendMsg(message, friend_name)
         return f"{friend_name} has received the message and think is ok. DO NOT send the same message again."
 
@@ -95,8 +95,8 @@ class WeChatAction(BaseAction):
             image_path (str): the image path you want to send. you must confirm the image path is exist.
             friend_name (str): the friend name you want to send image. you must confirm the friend name is in your friend list.
         """
-        agent_data = get_current_agent_data()
-        wechat: WeChat = self.get_wechat_handle(agent_data)
+
+        wechat: WeChat = self.get_wechat_handle()
         wechat.SendFiles(image_path, friend_name)
         return f"{friend_name} has received the image and think is ok. DO NOT send the same image again."
 
@@ -108,8 +108,8 @@ class WeChatAction(BaseAction):
             image_path (str): the file path you want to send. you must confirm the file path is exist.
             friend_name (str): the friend name you want to send file. you must confirm the friend name is in your friend list.
         """
-        agent_data = get_current_agent_data()
-        wechat: WeChat = self.get_wechat_handle(agent_data)
+
+        wechat: WeChat = self.get_wechat_handle()
         wechat.SendFiles(image_path, friend_name)
         return f"{friend_name} has received the file and think is ok. DO NOT send the same file again."
 
@@ -120,8 +120,8 @@ class WeChatAction(BaseAction):
         Args:
             friend_name (str): the friend name you want to add to listen list. you must confirm the friend name is in your friend list.
         """
-        agent_data = get_current_agent_data()
-        wechat: WeChat = self.get_wechat_handle(agent_data)
+
+        wechat: WeChat = self.get_wechat_handle()
         wechat.AddListenChat(friend_name)
         return f"Add {friend_name} to listen list successfully. {friend_name} is in the listen list now. DO NOT add the same friend again."
 
@@ -132,8 +132,8 @@ class WeChatAction(BaseAction):
         Args:
             friend_name (str): the friend name you want to listen for new message. you must confirm the friend name is in your friend list. If you want to listen for all the new message, you can set the friend_name to None.
         """
-        agent_data = get_current_agent_data()
-        wechat: WeChat = self.get_wechat_handle(agent_data)
+
+        wechat: WeChat = self.get_wechat_handle()
         wechat.AddListenChat(friend_name)
         wait = 0
         while wait < timeout:
