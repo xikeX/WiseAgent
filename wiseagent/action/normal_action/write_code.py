@@ -56,7 +56,7 @@ class WriteCodeAction(BaseAction):
         """This Action Does not need to add structure"""
 
     @action()
-    def wirte_code(self, file_list: list[str], file_description: str):
+    def write_code(self, file_list: list[str], file_description: str):
         """Impletement the code file according to the file_description.
         Args:
             file_list (list[str]): the list of the file name

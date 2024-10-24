@@ -11,6 +11,8 @@ report_ability :
 action_ability :
   - action_name : "MethodPlanAction"
   - action_name : "WriteCodeAction"
+  - action_name : "EditorAction"
+  - action_name : "TerminalAction"
   - action_name : "Chat"
 action_experience :
   "MethodPlanAction": |
@@ -27,7 +29,7 @@ action_experience :
       },
       {
             "action_name": "WriteCodeAction",
-            "action_method": "wirte_code",
+            "action_method": "write_code",
             "args": {
                 "file_list": [
                   "2048_game/index.html",
@@ -44,7 +46,7 @@ action_experience :
     [
       {
             "action_name": "WriteCodeAction",
-            "action_method": "wirte_code",
+            "action_method": "write_code",
             "args": {
                 "html_file_path":"2048_game/index.html"
             }

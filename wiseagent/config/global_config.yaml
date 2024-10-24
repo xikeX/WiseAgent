@@ -29,6 +29,8 @@ action_module_path:
   - "wiseagent.action.normal_action.arxiv"
   - "wiseagent.action.normal_action.write_code"
   - "wiseagent.action.normal_action.long_document_generate"
+  - "wiseagent.action.normal_action.terminal"
+  - "wiseagent.action.normal_action.editor"
 
 
 # LLM

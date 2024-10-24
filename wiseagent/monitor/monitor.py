@@ -96,6 +96,7 @@ class Monitor(BaseModel):
         # create or continue a thread to receive message
         try:
             self.report_thread = self.report_thread or threading.Thread(target=self._report, args=(get_agent_core(),))
+            self.report_thread.daemon = True
             self.report_thread.start()
             return True
         except Exception as e:

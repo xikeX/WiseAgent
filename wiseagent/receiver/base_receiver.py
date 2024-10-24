@@ -100,6 +100,7 @@ class BaseReceiver(BaseModel):
             self.receive_thread = self.receive_thread or threading.Thread(
                 target=self._receive, args=(get_agent_core(),)
             )
+            self.receive_thread.daemon = True
             self.receive_thread.start()
             return True
         except Exception as e:
