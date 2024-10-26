@@ -34,9 +34,10 @@ class MultiAgentEnv(BaseEnvironment):
     environment_reporter: Any = None
     message_cache: Any = None
     agent_name_list: list[str] = None
-    verbose:bool = False
-    save_path:str = ""
-    def __init__(self, agent_name_list: list[str] = None,verbose = True):
+    verbose: bool = False
+    save_path: str = ""
+
+    def __init__(self, agent_name_list: list[str] = None, verbose=True):
         super().__init__()
         """Initialize the MultiAgentReporter with a list of agents.
         
@@ -60,7 +61,7 @@ class MultiAgentEnv(BaseEnvironment):
             logger.error(f"Agent {un_exists_agent_list} is not exists.")
         if verbose:
             self.verbose = verbose
-            self.save_path = repair_path("test.txt")    
+            self.save_path = repair_path("test.txt")
         for agent_data in agent_list:
             other_agent_name = [agent_name for agent_name in self.agent_name_list if agent_name != agent_data.name]
             env_description = ENV_DESCRIPTION.format(agent_name_list=",".join(other_agent_name))

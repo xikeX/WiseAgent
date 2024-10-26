@@ -12,9 +12,10 @@ from pathlib import Path
 from typing import Any, Dict, List
 from urllib.parse import urlencode
 
-from matplotlib import pyplot as plt
+import matplotlib
 import pandas as pd
 from bs4 import BeautifulSoup
+from matplotlib import pyplot as plt
 from playwright.sync_api import sync_playwright
 from tqdm import tqdm
 
@@ -25,8 +26,8 @@ from wiseagent.common.annotation import singleton
 from wiseagent.common.file_io import repair_path, write_excel, write_file
 from wiseagent.core.agent_core import get_agent_core
 from wiseagent.protocol.message import BaseActionMessage, FileUploadMessage
-import matplotlib
-matplotlib.rc("font", family='Microsoft YaHei')
+
+matplotlib.rc("font", family="Microsoft YaHei")
 
 BASE_CLASS = "\n".join(
     [
@@ -375,9 +376,9 @@ class ArxivAction(BaseAction):
             label_statistic[label] += 1
         # draw a bar chart of the label statistic
         plt.figure(figsize=(10, 10))
-        pic = plt.barh(label_statistic.keys(), label_statistic.values(),height=0.5)
-        plt.tick_params(axis="y",labelsize = 8)
-        plt.tick_params(axis="x",labelsize = 8)
+        pic = plt.barh(label_statistic.keys(), label_statistic.values(), height=0.5)
+        plt.tick_params(axis="y", labelsize=8)
+        plt.tick_params(axis="x", labelsize=8)
         plt.bar_label(pic, padding=3)
         plt.xlabel("Count")
         plt.ylabel("Classification")
