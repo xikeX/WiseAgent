@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 from urllib.parse import urlencode
 
+from matplotlib import pyplot as plt
 import pandas as pd
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
@@ -24,6 +25,8 @@ from wiseagent.common.annotation import singleton
 from wiseagent.common.file_io import repair_path, write_excel, write_file
 from wiseagent.core.agent_core import get_agent_core
 from wiseagent.protocol.message import BaseActionMessage, FileUploadMessage
+import matplotlib
+matplotlib.rc("font", family='Microsoft YaHei')
 
 BASE_CLASS = "\n".join(
     [
@@ -345,6 +348,41 @@ class ArxivAction(BaseAction):
             print(f"Error processing {arxiv_paper_item['title']}: {e}")
             arxiv_paper_item["label"] = []
             arxiv_paper_item["abstract_translated"] = ""
+
+    @action()
+    def get_statistics(self, save_folder):
+        """Take this action after save data
+        Args:
+            save_folder (str): The folder where the data is saved
+        """
+        save_folder = repair_path(save_folder)
+        agent_data: AgentData = get_current_agent_data()
+        arxiv_action_data = agent_data.get_action_data(self.action_name)
+        cur_arxiv_data = arxiv_action_data.cur_arxiv_data
+        # Make statistics of the current data
+        # The cir_arxiv_data is a list of dictionaries
+        # Each dictionary contains the following keys:
+        # - title: the title of the paper
+        # - abstract: the abstract of the paper
+        # - label: the label of the paper
+        # - abstract_translated: the translated abstract of the paper
+        # Make a statistic of the label
+        label_statistic = {}
+        for item in cur_arxiv_data:
+            label = item["label"]
+            if label not in label_statistic:
+                label_statistic[label] = 0
+            label_statistic[label] += 1
+        # draw a bar chart of the label statistic
+        plt.figure(figsize=(10, 10))
+        pic = plt.barh(label_statistic.keys(), label_statistic.values(),height=0.5)
+        plt.tick_params(axis="y",labelsize = 8)
+        plt.tick_params(axis="x",labelsize = 8)
+        plt.bar_label(pic, padding=3)
+        plt.xlabel("Count")
+        plt.ylabel("Classification")
+        plt.title(f"Classification Statistics")
+        plt.savefig(save_folder / "classification_statistics.png")
 
 
 def get_action():

@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from wiseagent.agent_data.base_agent_data import AgentData
 from wiseagent.common.annotation import singleton
+from wiseagent.common.file_io import repair_path
 from wiseagent.core.agent_core import get_agent_core
 from wiseagent.env.base.base import BaseEnvironment
 from wiseagent.protocol.message import (
@@ -33,8 +34,9 @@ class MultiAgentEnv(BaseEnvironment):
     environment_reporter: Any = None
     message_cache: Any = None
     agent_name_list: list[str] = None
-
-    def __init__(self, agent_name_list: list[str] = None):
+    verbose:bool = False
+    save_path:str = ""
+    def __init__(self, agent_name_list: list[str] = None,verbose = True):
         super().__init__()
         """Initialize the MultiAgentReporter with a list of agents.
         
@@ -56,7 +58,9 @@ class MultiAgentEnv(BaseEnvironment):
             ]
         ):
             logger.error(f"Agent {un_exists_agent_list} is not exists.")
-
+        if verbose:
+            self.verbose = verbose
+            self.save_path = repair_path("test.txt")    
         for agent_data in agent_list:
             other_agent_name = [agent_name for agent_name in self.agent_name_list if agent_name != agent_data.name]
             env_description = ENV_DESCRIPTION.format(agent_name_list=",".join(other_agent_name))
@@ -67,8 +71,9 @@ class MultiAgentEnv(BaseEnvironment):
     def env_report(self, message: Message):
         """Report the message to the environment and log it to a file."""
         with self.file_lock:
-            with open("test.txt", "a", encoding="utf-8") as f:
-                f.write(f"{message.send_from}->{message.send_to}:{message.content}\n\n")
+            if self.verbose:
+                with open(self.save_path, "a", encoding="utf-8") as f:
+                    f.write(f"{message.send_from}->{message.send_to}:{message.content}\n\n")
         super().env_report(message)
 
     def add_agent(self, agent_name: str):
@@ -98,9 +103,10 @@ class MultiAgentEnv(BaseEnvironment):
         if message.env_handle_type == EnvironmentHandleType.COMUNICATION:
             if message.send_to == "user":
                 print(f"Receive Mesage:{message.content}")
-                with self.file_lock:
-                    with open("test.txt", "a", encoding="utf-8") as f:
-                        f.write(f"{message.send_from}->{message.send_to}:{message.content}\n\n")
+                if self.verbose:
+                    with self.file_lock:
+                        with open("test.txt", "a", encoding="utf-8") as f:
+                            f.write(f"{message.send_from}->{message.send_to}:{message.content}\n\n")
             else:
                 # this message is to other agent
                 self.env_report(message)
