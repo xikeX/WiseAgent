@@ -6,6 +6,7 @@ LastEditTime: 2024-10-06 17:37:43
 Description: 
 """
 
+import json
 import uvicorn
 
 from wiseagent.common.file_io import read_rb
@@ -112,20 +113,19 @@ async def post_message(target_agent_name: str, content: str):
 # multi_agent_env_server.message_cache = message_cache
 @app.get("/get_message")
 async def get_message(position: int):
-    try:
-        message_list, next_position_tag, new_message = multi_agent_env_server.get_message(position)
-        if message:
-            message = message.to_json()
+    # try:
+        message_list, next_position_tag = multi_agent_env_server.get_message(position)
+        if message_list:
+            message_list = json.dumps([m._to_dict() for m in message_list])
         else:
-            message = "None"
+            message_list = []
         return {
             "message_list": message_list,
             "next_position_tag": next_position_tag,
-            "new_message": new_message,
         }
-    except Exception as e:
-        print(3)
-        return {"message": str(e), "next_position_tag": position, "has_next": False}
+    # except Exception as e:
+    #     print(3)
+    #     return {"message_list": str(e), "next_position_tag": position}
 
 
 @app.post("/get_agent_list")

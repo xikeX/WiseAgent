@@ -430,7 +430,7 @@ def handle_message(message: Message):
 
 
 def fetch_message_from_backend():
-    try:
+    # try:
         response = requests.get(
             "http://localhost:5000/get_message", params={"position": st.session_state.current_message_id}
         )
@@ -438,20 +438,18 @@ def fetch_message_from_backend():
             data = response.json()
             message_list = data["message_list"]
             next_position_tag = data["next_position_tag"]
-            new_message = bool(data["new_message"])
-            if new_message:
+            if message_list:
                 message_list = json.loads(message_list)
                 for message in message_list:
                     handle_message(message)
                 st.session_state.current_message_id = next_position_tag
                 st.rerun()
-                return True
             else:
                 return False
         else:
             st.error("Failed to get message from the backend.")
-    except Exception as e:
-        st.error(f"An error occurred while fetching message from the backend: {str(e)}")
+    # except Exception as e:
+    #     st.error(f"An error occurred while fetching message from the backend: {str(e)}")
 
 
 def start_polling():

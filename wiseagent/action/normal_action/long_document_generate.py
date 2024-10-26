@@ -1,8 +1,6 @@
 import re
 from typing import Any, List
 
-from click import prompt
-from humanfriendly import parse_size
 
 from wiseagent.action.action_annotation import action
 from wiseagent.action.base import BaseAction, BaseActionData
