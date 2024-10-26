@@ -147,7 +147,7 @@ class ArxivAction(BaseAction):
 
         # Report the arxiv information to the agent core
         article_information_json_string = "```json\n" + file_content + "```"
-        agent_core.monitor.add_message(BaseActionMessage(content=article_information_json_string))
+        BaseActionMessage(content=article_information_json_string).send_message()
 
         # Report the arxiv information to the agent.
         article_information_description = ""
@@ -170,7 +170,6 @@ class ArxivAction(BaseAction):
         save_excel_path = repair_path(save_excel_path)
 
         # Get the base data of this action
-        agent_core = get_agent_core()
         agent_data = get_current_agent_data()
         arxiv_data = agent_data.get_action_data(self.action_name)
 
@@ -190,9 +189,7 @@ class ArxivAction(BaseAction):
         # Translate and classify papers
         for item in tqdm(paper_data, total=len(paper_data)):
             self.translate_and_classify(item)
-            agent_core.monitor.add_message(
-                BaseActionMessage(content="```json" + json.dumps(item, ensure_ascii=False) + "```")
-            )
+            BaseActionMessage(content="```json" + json.dumps(item, ensure_ascii=False) + "```").send_message()
 
         # classify the paper
         classified_data = defaultdict(list)
@@ -204,8 +201,7 @@ class ArxivAction(BaseAction):
         write_excel(save_excel_path, paper_data)
 
         # Upload the Excel file to the reporter
-        with open(save_excel_path, "rb") as f:
-            agent_core.monitor.add_message(FileUploadMessage(file_name=save_excel_path.name, file_content=f.read()))
+        FileUploadMessage(file_name=save_excel_path.name).send_message()
 
         # Generate and save Markdown
         markdown_path = save_excel_path.with_suffix(".md")
@@ -230,8 +226,7 @@ class ArxivAction(BaseAction):
         f.close()
 
         # Upload the Markdown file to the reporter
-        with open(markdown_path, "rb") as f:
-            agent_core.monitor.add_message(FileUploadMessage(file_name=markdown_path.name, file_content=f.read()))
+        FileUploadMessage(file_name=markdown_path.name).send_message()
 
         return f"Save the arxiv paper task finished. The path is {save_excel_path}."
 

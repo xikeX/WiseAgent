@@ -52,6 +52,7 @@ class AgentCore(BaseModel):
 
     def close(self):
         self._is_running = False
+        self._have_been_init = False
 
     def init(self):
         """
@@ -158,6 +159,9 @@ class AgentCore(BaseModel):
 
     def get_receiver(self):
         return self.receiver
+
+    def report_message(self, message: str):
+        self.monitor.add_message(message)
 
 
 def get_agent_core():

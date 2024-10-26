@@ -223,10 +223,9 @@ class LongDocumentGenerateAction(BaseAction):
         respond = self.llm_ask(generate_outline_prompt)
         outline = self.parse_outline(respond)
         agent_core = get_agent_core()
-        report_message = CommunicationMessage(
+        CommunicationMessage(
             content=f"generate_outline executed successfully.\nThe outline is:\n{outline}"
-        )
-        agent_core.monitor.add_message(report_message)
+        ).send_message()
         return f"generate_outline executed successfully.\nThe outline is:\n{outline}"
 
     def parse_outline(self, xml_outline):

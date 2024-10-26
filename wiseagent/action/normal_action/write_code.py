@@ -105,14 +105,13 @@ class WriteCodeAction(BaseAction):
 
         file_list = []
         code_list = []
-        agent_core = get_agent_core()
         while rsp:
             file_name, rsp = get_tag_content("file_name", rsp)
             code, rsp = get_tag_content("code", rsp)
             if not (file_name and code):
                 break
             write_file(file_name, code)
-            agent_core.monitor.add_message(FileUploadMessage(file_name=file_name, file_content=read_rb(file_name)))
+            FileUploadMessage(file_name=file_name).send_message()
             file_list.append(file_name)
             code_list.append(code)
         return file_list, code_list

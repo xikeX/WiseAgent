@@ -31,3 +31,11 @@ fastapi
 
 # memory
 llama_index
+
+# dynamic notebook
+nbformat
+seaborn
+scikit-learn
+jupyter_client
+jupyter
+ipykernel

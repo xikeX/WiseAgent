@@ -39,19 +39,16 @@ class Chat(BaseAction):
             If you want to wait for a response, you can set wait_for_response to True.
             >>> chat("Bob", "I'm fine, thank you. How about you?", wait_for_response=True)
         """
-        agent_core = get_agent_core()
         agent_data = get_current_agent_data()
         # Send message to the agent
         target_agent = send_to
-        report_message = Message(
-            send_from=agent_data.name,
+        Message(
             send_to=target_agent.strip(),
             env_handle_type=EnvironmentHandleType.COMUNICATION,
             content=message.strip(),
             time_stamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             track=[f"file:{__file__}\nfuntion:chat"],
-        )
-        agent_core.monitor.add_message(report_message)
+        ).send_message()
         output = f"Send message to {target_agent} successfully. {target_agent} have check, if you have no longer to take action, try to wait. Do not send the same message again."
         if wait_for_response:
             agent_data.observe(with_reset=True)

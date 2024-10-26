@@ -31,6 +31,7 @@ def get_current_agent_data():
 
 
 class AgentData(BaseModel, YamlConfig):
+    agent_id: str = ""
     name: str
     description: str = ""
     data_save_file: str = ""

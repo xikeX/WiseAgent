@@ -32,6 +32,12 @@ class BaseAction(BaseModel):
         self.action_description = get_action_class_desciprtion(self.__class__)
         self.action_name = self.__class__.__name__
 
+    def get_current_action_data(self):
+        agent_data = get_current_agent_data()
+        if agent_data is None:
+            return None
+        return agent_data.get_action_data(self.action_name)
+
     def _description_filter(self, action_config):
         if self.action_description is None:
             self.action_description = get_action_class_desciprtion(self)

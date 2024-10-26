@@ -125,7 +125,7 @@ class MethodPlanAction(BasePlanAction):
         return {"thoughts": thoughts, "action_command_list": command_list}
 
     @action()
-    def finish_current_task(self):
+    def finish_current_task(self, task_description):
         """Use this action to mark the current task as done.
 
         Args:
@@ -135,7 +135,7 @@ class MethodPlanAction(BasePlanAction):
         if len(plan_action_data.plan_list) > plan_action_data.current_plan_index:
             plan_action_data.plan_list[plan_action_data.current_plan_index]["status"] = "done"
             plan_action_data.current_plan_index += 1
-        return "finish current task success."
+        return "Finish current task success."
 
     @action()
     def create_new_task(self, task_description: str):

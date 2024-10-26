@@ -31,6 +31,7 @@ action_module_path:
   - "wiseagent.action.normal_action.long_document_generate"
   - "wiseagent.action.normal_action.terminal"
   - "wiseagent.action.normal_action.editor"
+  - "wiseagent.action.normal_action.jupyter_notebook"
 
 
 # LLM

@@ -13,7 +13,9 @@ from typing import Any, List
 
 from pydantic import BaseModel
 
+from wiseagent.common.file_io import read_rb
 from wiseagent.config import logger
+from wiseagent.core.agent_core import get_agent_core
 
 STREAM_END_FLAG = "[STREAM_END_FLAG]"
 
@@ -85,6 +87,17 @@ class Message(BaseModel):
         # TODO: if audio is a path, read it
         self.appendix["audio"] = audio
 
+    def send_message(self):
+        """
+        This is a quick way to report the message to the user.
+        Make sure the agent core is active.
+        """
+        agent_core = get_agent_core()
+        if agent_core and agent_core.is_running:
+            agent_core.report_message(self)
+        else:
+            logger.warning("Agent core is not active, cannot send message. Please start the agent core first.")
+
 
 class AIMessage(Message):
     llm_handle_type: str = LLMHandleType.AI
@@ -118,6 +131,13 @@ class FileUploadMessage(Message):
     env_handle_type: str = EnvironmentHandleType.FILE_UPLOAD
     file_name: str = ""
     file_content: bytes = b""
+
+    def __init__(self):
+        super().__init__()
+        if self.file_name is "":
+            raise ValueError("file_name must be specified")
+        if self.file_content is b"":
+            self.file_content = read_rb(self.file_name)
 
     def to_json(self) -> str:
         data = self._to_dict(exclude=["file_content"])
