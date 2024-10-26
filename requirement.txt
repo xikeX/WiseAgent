@@ -14,6 +14,7 @@ playwright
 Beautifulsoup4
 pandas
 openpyxl
+matplotlib
 
 # frontend
 streamlit
@@ -25,6 +26,8 @@ streamlit_chatbox
 
 # backend
 flask
+uvicorn
+fastapi
 
 # memory
 llama_index

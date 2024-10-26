@@ -54,9 +54,9 @@ class MultiAgentEnvServer:
             tuple: (message,next_position_tag,has_next)
         """
         if position_tag >= len(self.message_cache):
-            return None, position_tag, False
+            return None, position_tag
         next_position_tag = len(self.message_cache)
-        return self.message_cache[position_tag][0], self.message_cache[position_tag][1], next_position_tag, True
+        return self.message_cache[position_tag:], next_position_tag
         #  this will be loop for frontend to get the newest message
 
     def get_agent_list(self):

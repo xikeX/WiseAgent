@@ -65,7 +65,7 @@ class Message(BaseModel):
             logger.warning(f"send_from {self.send_from} contains uppercase letters, convert to lowercase")
             self.send_from = self.send_from.lower()
 
-    def _to_json(self, exclude=[]) -> str:
+    def _to_dict(self, exclude=[]) -> str:
         # 将 stream_queue 转换为可序列化的格式
         if self.stream_queue is not None and not isinstance(
             self.stream_queue, (str, int, float, bool, list, dict, tuple, set)
@@ -74,7 +74,7 @@ class Message(BaseModel):
         return self.model_dump(exclude=exclude)
 
     def to_json(self, exclude=[]) -> str:
-        data = self._to_json(exclude)
+        data = self._to_dict(exclude)
         return json.dumps(data, ensure_ascii=False)
 
     def add_image(self, image):
@@ -120,7 +120,7 @@ class FileUploadMessage(Message):
     file_content: bytes = b""
 
     def to_json(self) -> str:
-        data = self._to_json(exclude=["file_content"])
+        data = self._to_dict(exclude=["file_content"])
         data["file_content"] = base64.b64encode(self.file_content).decode("utf-8")
         return json.dumps(data, ensure_ascii=False)
 

@@ -93,7 +93,7 @@ class MultiAgentEnv(BaseEnvironment):
         """Get the message from the wiseagent system and send to th the wiseagent back."""
         # The Report Message and Receiver Message is to agent system. So in here will be a litle different
         if self.message_cache is not None:
-            self.message_cache.append((agent_data.name, message))
+            self.message_cache.append(message)
             print("agent_name", agent_data.name, "\n message.send_from", message.send_from)
         if message.env_handle_type == EnvironmentHandleType.COMUNICATION:
             if message.send_to == "user":

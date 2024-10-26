@@ -14,6 +14,7 @@ from urllib.parse import urlencode
 
 import pandas as pd
 from bs4 import BeautifulSoup
+from matplotlib import pyplot as plt
 from playwright.sync_api import sync_playwright
 from tqdm import tqdm
 
@@ -93,8 +94,8 @@ class arxivActionData(BaseActionData):
     arxiv_page: Any = None
 
     # arxiv paper data
-    from_date: Any = None
-    to_date: Any = None
+    start_date: Any = None
+    end_date: Any = None
     current_arxiv_data: List[Dict] = []
 
 
@@ -109,13 +110,12 @@ class ArxivAction(BaseAction):
         agent_data.set_action_data(self.action_name, arxivActionData())
 
     ## class action -----------------------------------
-
     @action()
     def search_arxiv_paper(self, search_terms: str, pass_days: int = 1):
         """Builds the URL for an advanced search on arXiv.org.
 
         Args:
-            search_terms (str): A string containing the search terms separated by spaces. Each search term should be enclosed in double quotes.Terms can be linked using AND, OR, and NOT operators
+            search_terms (str): A string containing the search terms separated by spaces. Each search term should be enclosed in double quotes. Terms can be linked using AND, OR, and NOT operators. The search_terms should in english.
             pass_days (int, optional): The number of days to search back. Defaults to 1.
 
         Example:
@@ -138,8 +138,8 @@ class ArxivAction(BaseAction):
 
         # Save the data to the acton data
         arxiv_data.current_arxiv_data = article_information_list
-        arxiv_data.from_date = (datetime.now() - timedelta(days=pass_days)).strftime("%Y-%m-%d")
-        arxiv_data.to_date = (datetime.now()).strftime("%Y-%m-%d")
+        arxiv_data.start_date = (datetime.now() - timedelta(days=pass_days)).strftime("%Y-%m-%d")
+        arxiv_data.end_date = (datetime.now()).strftime("%Y-%m-%d")
 
         # Save the data to the file. NOTE: This will be remove in the near version.
         file_content = json.dumps(article_information_list, ensure_ascii=False, indent=4)
@@ -210,7 +210,7 @@ class ArxivAction(BaseAction):
         # Generate and save Markdown
         markdown_path = save_excel_path.with_suffix(".md")
         f = open(markdown_path, "w", encoding="utf-8")
-        f.write(f"# Arxiv Paper\n - {arxiv_data.from_date} - {arxiv_data.to_date}\n")
+        f.write(f"# Arxiv Paper\n - {arxiv_data.start_date} - {arxiv_data.end_date}\n")
         f.write("[TOC]\n\n")
         for key in classified_data:
             f.write(f"## {key} : {len(classified_data[key])}篇\n")
@@ -345,6 +345,37 @@ class ArxivAction(BaseAction):
             print(f"Error processing {arxiv_paper_item['title']}: {e}")
             arxiv_paper_item["label"] = []
             arxiv_paper_item["abstract_translated"] = ""
+
+    @action()
+    def get_statistics(self, save_folder):
+        """Take this action after save data
+        Args:
+            save_folder (str): The folder where the data is saved
+        """
+        save_folder = repair_path(save_folder)
+        agent_data: AgentData = get_current_agent_data()
+        arxiv_action_data = agent_data.get_action_data(self.action_name)
+        cur_arxiv_data = arxiv_action_data.cur_arxiv_data
+        # Make statistics of the current data
+        # The cir_arxiv_data is a list of dictionaries
+        # Each dictionary contains the following keys:
+        # - title: the title of the paper
+        # - abstract: the abstract of the paper
+        # - label: the label of the paper
+        # - abstract_translated: the translated abstract of the paper
+        # Make a statistic of the label
+        label_statistic = {}
+        for item in cur_arxiv_data:
+            label = item["label"]
+            if label not in label_statistic:
+                label_statistic[label] = 0
+            label_statistic[label] += 1
+        # draw a bar chart of the label statistic
+        plt.bar(label_statistic.keys(), label_statistic.values())
+        plt.xlabel("Label")
+        plt.ylabel("Count")
+        plt.title(f"Classification Statistics form {arxiv_action_data.start_date} to {arxiv_action_data.end_date}")
+        plt.savefig(save_folder / "classification_statistics.png")
 
 
 def get_action():
