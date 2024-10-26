@@ -14,6 +14,7 @@ from urllib.parse import urlencode
 
 import pandas as pd
 from bs4 import BeautifulSoup
+from matplotlib import pyplot as plt
 from playwright.sync_api import sync_playwright
 from tqdm import tqdm
 
@@ -24,8 +25,6 @@ from wiseagent.common.annotation import singleton
 from wiseagent.common.file_io import repair_path, write_excel, write_file
 from wiseagent.core.agent_core import get_agent_core
 from wiseagent.protocol.message import BaseActionMessage, FileUploadMessage
-from matplotlib import pyplot as plt
-
 
 BASE_CLASS = "\n".join(
     [
@@ -320,7 +319,6 @@ class ArxivAction(BaseAction):
         if arxiv_action_data.arxiv_page is None:
             arxiv_action_data.arxiv_page = arxiv_action_data.arxiv_browser.new_page()
         return arxiv_action_data.arxiv_page
-    
 
     def parse_time(slef, arxiv_id):
         DATE_FORMAT = "20{}-{}"
@@ -349,13 +347,13 @@ class ArxivAction(BaseAction):
             arxiv_paper_item["abstract_translated"] = ""
 
     @action()
-    def get_statistics(self,save_folder):
+    def get_statistics(self, save_folder):
         """Take this action after save data
         Args:
             save_folder (str): The folder where the data is saved
         """
         save_folder = repair_path(save_folder)
-        agent_data:AgentData  = get_current_agent_data()
+        agent_data: AgentData = get_current_agent_data()
         arxiv_action_data = agent_data.get_action_data(self.action_name)
         cur_arxiv_data = arxiv_action_data.cur_arxiv_data
         # Make statistics of the current data

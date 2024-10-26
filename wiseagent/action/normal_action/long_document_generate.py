@@ -1,7 +1,6 @@
 import re
 from typing import Any, List
 
-
 from wiseagent.action.action_annotation import action
 from wiseagent.action.base import BaseAction, BaseActionData
 from wiseagent.agent_data.base_agent_data import get_current_agent_data
