@@ -17,15 +17,15 @@ from wiseagent.action.base import BaseActionData
 from wiseagent.action.plan_action.base_plan_action import BasePlanAction
 from wiseagent.agent_data.base_agent_data import AgentData, get_current_agent_data
 from wiseagent.common.annotation import singleton
-from wiseagent.common.parse_llm_respond import parse_json_data
+from wiseagent.common.parse_llm_respond import parse_json_data, parse_xml_data
 from wiseagent.core.agent_core import get_agent_core
 from wiseagent.protocol.action_command import ActionCommand, parse_command
 from wiseagent.protocol.message import ThoughtMessage
 
-INSTRUCTION_PROMPT = """
+JSON_INSTRUCTION_PROMPT = """
 ## Plan List
 {plan_list}
-
+## Current Task
 {current_task}
 ## Instruction
 Please generate a plan for the agent to complete the task.
@@ -46,7 +46,7 @@ The json format is:
 ]
 ``
 """
-EXPERIENCE = """
+JSON_EXPERIENCE = """
 output format:
 [
     {
@@ -60,19 +60,63 @@ output format:
 ]
 """
 
+XML_INSTRUCTION_PROMPT = """
+## Plan List
+{plan_list}
+## Current Task
+{current_task}
+## Instruction
+Please generate a plan for the agent to complete the task.
+Your respond must contain the thought and a json for action command list.
+The xml format is:
+```xml
+<action_list>
+<action>
+<action_name>action_name</action_name>
+<action_method>action_method</action_method>
+<args name="arg_name_1" type = str >arg_value_1</args>
+<args name="arg_name_2" type = list >[arg_value_2]</args>
+<args name="arg_name_3" type = int >arg_value_3</args>
+...
+</action>
+...
+</action_list>
+```
+"""
+XML_EXPERIENCE = """
+output format:
+<action_list>
+<action>
+<action_name>Chat</action_name>
+<action_method>chat</action_method>
+<args name="send_to" type = str >Alice</args>
+<args name="message" type = str >Hello, Alice!</args>
+</action>
+...
+</action_list>
+"""
+
 
 class MethodPlanActionData(BaseActionData):
     """The data of the method plan action"""
 
-    instruction_prompt: str = INSTRUCTION_PROMPT
-    expericence: str = EXPERIENCE
+    instruction_prompt: str = ""
+    expericence: str = ""
     plan_list: List[dict] = []
     current_plan_index: int = 0
+    parse_type = "xml"
 
     def __init__(self, agent_data: AgentData):
         super().__init__()
         # if agent_data has experience, use it, otherwise use the default experience
-        self.expericence = agent_data.get_experience("MethodPlanAction") or self.expericence
+        if hasattr(agent_data, "parse_type"):
+            self.parse_type = agent_data.parse_type or "xml"
+        if self.parse_type == "json":
+            self.instruction_prompt = JSON_INSTRUCTION_PROMPT
+            self.expericence = agent_data.get_experience("MethodPlanAction") or JSON_EXPERIENCE
+        else:
+            self.instruction_prompt = XML_INSTRUCTION_PROMPT
+            self.expericence = agent_data.get_experience("MethodPlanAction") or XML_EXPERIENCE
         pass
 
 
@@ -82,6 +126,11 @@ class MethodPlanAction(BasePlanAction):
 
     action_name: str = "MethodPlan"
     max_tries: int = 3
+    parse_json_data: dict = {}
+
+    def __init__(self):
+        super().__init__()
+        self.parse_function = {"json": parse_json_data, "xml": parse_xml_data}
 
     def plan(self, command_list: List[ActionCommand]) -> Dict:
         """Execute the plan action
@@ -100,12 +149,12 @@ class MethodPlanAction(BasePlanAction):
             if len(plan_action_data.plan_list) > plan_action_data.current_plan_index
             else "",
         )
-        rsp = self.llm_ask(instruction_prompt, system_prompt=system_prompt)
-        json_data, error = parse_json_data(rsp)
-        i = 0
+        i, error = 0, "start"
         while error and i < self.max_tries:
+            rsp = self.llm_ask(instruction_prompt, system_prompt=system_prompt)
+            json_data, error = self.parse_function[agent_data.parse_type](rsp)
             prompt = instruction_prompt + f"Your respond is :{rsp}"
-            prompt += f"But the json data is not valid.\nError:{error} \nplease try again."
+            prompt += f"But the data format is not valid.\nError:{error} \nplease try again."
             rsp = self.llm_ask(prompt, system_prompt=system_prompt)
             json_data, error = parse_json_data(rsp)
             i += 1
