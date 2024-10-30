@@ -19,9 +19,9 @@ from wiseagent.protocol.message import STREAM_END_FLAG, Message
 class TextReporter(BaseReporter):
     name: str = "TextReporter"
 
-    def handle_stream_message(self, agentdata: AgentData, report_message: Message) -> bool:
+    def handle_stream_message(self, report_message: Message) -> bool:
         """the single agent report will report the message to the website."""
-        logger.info(f"{agentdata.name}:")
+        logger.info(f"{report_message.send_from}:")
         stream_queue = report_message.stream_queue
         while True:
             try:
@@ -33,8 +33,8 @@ class TextReporter(BaseReporter):
             logger.info(message_block)
         return True
 
-    def handle_message(self, agentdata: AgentData, report_message: Message) -> bool:
-        logger.info(f"{agentdata.name}: {report_message.content}")
+    def handle_message(self, report_message: Message) -> bool:
+        logger.info(f"{report_message.send_from}: {report_message.content}")
         return True
 
 

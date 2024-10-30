@@ -7,11 +7,8 @@ Description:
 """
 
 from abc import ABC, abstractmethod
-from typing import List
 
 from pydantic import BaseModel
-
-from wiseagent.agent_data.base_agent_data import AgentData
 
 
 class BaseReporter(BaseModel, ABC):
@@ -22,14 +19,14 @@ class BaseReporter(BaseModel, ABC):
     name: str = "BaseReporter"
 
     @abstractmethod
-    def handle_stream_message(self, agentdata: "AgentData", report_data):
+    def handle_stream_message(self, report_data) -> bool:
         """
         Report data to the reporter
         """
         raise NotImplementedError
 
     @abstractmethod
-    def handle_message(self, agentdata: "AgentData", report_data):
+    def handle_message(self, report_data) -> bool:
         """
         Report data to the reporter
         """
@@ -38,5 +35,5 @@ class BaseReporter(BaseModel, ABC):
 
 def get_reporter(name: str):
     """
-    subclass of BaseReporter must create this function
+    BaseReporterClass must create and return in this function
     """

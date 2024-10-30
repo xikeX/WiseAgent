@@ -67,27 +67,26 @@ class Monitor(BaseModel):
         """
         while agent_core.is_running:
             # get the message from the queue, if the queue is empty, the get() method will block until a message is available
-            message = None
-            try:
-                message = self.reporter_cache.get(timeout=1)
-            except queue.Empty:
-                continue
-            agent = None
-            for agent in agent_core.agent_list:
-                if agent.name == message.send_from:
-                    break
-            if agent is None:
-                logger.error(f"Agent {message.send_from} not found")
-                continue
-            self.handle_report(agent, message)
+            message = self.reporter_cache.get()
+            self.handle_report(message)
 
-    def handle_report(self, agentdata: AgentData, message: Message):
-        """This function will send the message to the each of the reporter in the reporter_list."""
+    def handle_report(self, message: Message):
+        """Report the message to reporter(Which is the receiver of the environment)
+        One message can only be reported to one reporter.
+        # TODO: hope in the future, one message can be reported to multiple reporter. But this must consider the stream message
+        Args:
+            message (Message): The message to be reported.
+        """
+        is_solved = False
         for reporter in self.reporter_list:
             if message.is_stream:
-                reporter.handle_stream_message(agentdata, message)
+                is_solved = reporter.handle_stream_message(message)
             else:
-                reporter.handle_message(agentdata, message)
+                is_solved = reporter.handle_message(message)
+            if is_solved:
+                break
+        if not is_solved:
+            logger.warning(f"Message {message} is not solved by any reporter.")
 
     def run_report_thread(self) -> bool:
         # check if the thread is running

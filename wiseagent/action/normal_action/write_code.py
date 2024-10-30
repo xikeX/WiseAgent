@@ -26,7 +26,7 @@ Your are and Engineer, you need to write some code according to the file descrip
 
 ## Instruction
 Implement the each of the code file according to the file_description. Ensure the code is compete, correct and bug free. Do Not leave any TODOs or comments in the code.
-
+Do not leave "```" in front of the code block.
 ## Output Format
 <file_name>
 the content of the file name 1
@@ -110,6 +110,7 @@ class WriteCodeAction(BaseAction):
             code, rsp = get_tag_content("code", rsp)
             if not (file_name and code):
                 break
+
             write_file(file_name, code)
             FileUploadMessage(file_name=file_name).send_message()
             file_list.append(file_name)

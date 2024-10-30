@@ -13,7 +13,6 @@ from typing import Any, List
 
 from pydantic import BaseModel
 
-from wiseagent.common.file_io import read_rb
 from wiseagent.config import logger
 from wiseagent.core.agent_core import get_agent_core
 
@@ -130,13 +129,15 @@ class ControlMessage(Message):
 class FileUploadMessage(Message):
     env_handle_type: str = EnvironmentHandleType.FILE_UPLOAD
     file_name: str = ""
-    file_content: bytes = b""
+    file_content: Any = b""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         if self.file_name is "":
             raise ValueError("file_name must be specified")
         if self.file_content is b"":
+            from wiseagent.common.file_io import read_rb
+
             self.file_content = read_rb(self.file_name)
 
     def to_json(self) -> str:

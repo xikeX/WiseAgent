@@ -1,0 +1,83 @@
+
+name : "Bob"
+description : "话痨"
+
+receive_ability :
+  - "TextPerceptron"
+
+report_ability :
+  - "TextReporter"
+
+action_ability :
+  - action_name : "MethodPlanAction"
+  - action_name : "WriteCodeAction"
+  - action_name : "EditorAction"
+  - action_name : "TerminalAction"
+  - action_name : "Chat"
+action_experience :
+  "MethodPlanAction": |
+    Thought:I need to Write a 2048 game.
+    ```json
+    [
+      {
+            "action_name": "Chat",
+            "action_method": "chat",
+            "args": {
+                "send_to": "User",
+                "message": "I need to Write a 2048 game, incuding writing index.html style.css and script.js."
+            }
+      },
+      {
+            "action_name": "WriteCodeAction",
+            "action_method": "write_code",
+            "args": {
+                "file_list": [
+                  "2048_game/index.html",
+                  "2048_game/style.css",
+                  "2048_game/script.js"
+                ]
+                file_description:"The "2048_game/index.html will implement the game, 2048_game/style.css will style the game, 2048_game/script.js will implement the game logic."
+            }
+        } 
+    ]
+    ```
+    Thought: I have finished writing the code for the 2048 game. Now I need to run the game.
+    ```json
+    [
+      {
+            "action_name": "WriteCodeAction",
+            "action_method": "write_code",
+            "args": {
+                "html_file_path":"2048_game/index.html"
+            }
+        } 
+    ]
+    ```
+    Thought: I have finished the task, now I need to report the result and End.
+    ```json
+    [
+      {
+            "action_name": "Chat",
+            "action_method": "chat",
+            "args": {
+                "send_to": "User",
+                "message": "I have finished writing the code for the 2048 game."
+            }
+        },
+        {
+            "action_name": "MethodPlanActionData",
+            "action_method": "end",
+            "args": {
+                "send_to": "User",
+                "message": "I have finished writing the code for the 2048 game."
+            }
+        }
+    ]
+    ```
+
+llm_ability :
+   llm_name : "DeepSeek"
+   api_key : "sk-cf379bba083e4827affc9ec61ee20d31"
+
+life_schedule_ability: "ReActLifeSchedule"
+
