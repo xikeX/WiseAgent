@@ -139,7 +139,7 @@ class MultiAgentEnv(BaseEnvironment):
 
     def handle_stream_message(self, message: Message) -> bool:
         """the single agent report will report the message to the website."""
-        if message.env_handle_type == EnvironmentHandleType.FILE_UPLOAD:
+        if message.env_handle_type == EnvironmentHandleType.FILE_UPLOAD and self.use_stream:
             # Create a new thread from the thread pool to handel file_upload_stream_message
             self.thread_pool.submit(self.handle_file_upload_stream_message, message)
 

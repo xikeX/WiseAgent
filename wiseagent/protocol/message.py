@@ -133,17 +133,17 @@ class FileUploadMessage(Message):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.file_name is "" and self.stream_queue is None:
+        if self.file_name == "" and self.stream_queue is None:
             raise ValueError("file_name must be specified")
-        if self.file_content is b"" and self.file_name:
+        if self.file_content == b"" and self.file_name:
             from wiseagent.common.file_io import read_rb
 
             self.file_content = read_rb(self.file_name)
 
-    def to_json(self) -> str:
-        data = self._to_dict(exclude=["file_content"])
+    def _to_dict(self, exclude=["file_content"]):
+        data = super()._to_dict(exclude=exclude)
         data["file_content"] = base64.b64encode(self.file_content).decode("utf-8")
-        return json.dumps(data, ensure_ascii=False)
+        return data
 
 
 class SleepMessage(Message):
