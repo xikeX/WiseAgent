@@ -40,7 +40,7 @@ class JupyterNotebookTool:
                 print("Execution error:")
                 for line in reply["content"]["traceback"]:
                     print(line)
-                return
+                return "\n".join(reply["content"]["traceback"]), []
 
             # Get execution result
             output = []
@@ -68,6 +68,7 @@ class JupyterNotebookTool:
             import traceback
 
             traceback.print_exc()
+            return str(e), []
 
     def handle_message(self, code_cell, msg):
         output_type = msg["msg_type"]

@@ -13,6 +13,7 @@ LastEditTime: 2024-10-06 12:16:35
 Description: 
 """
 
+import re
 from pathlib import Path
 from typing import Union
 
@@ -23,11 +24,15 @@ from wiseagent.agent_data.base_agent_data import get_current_agent_data
 
 def repair_path(path: Union[Path, str]):
     # If the path is not absolute, make it absolute based on the working directory of the current agent
+    illegal_chars = r'[*?"<>|\x00-\x1f]'
+    path = re.sub(illegal_chars, "", str(path))
     if not Path(path).is_absolute():
-        agent_data = get_current_agent_data()
-        working_dir = agent_data.get_working_dir()
+        # agent_data = get_current_agent_data()
+        # working_dir = agent_data.get_working_dir()
+        working_dir = "workspace"
         path = Path(working_dir) / path
-    return path
+    return Path(path).resolve().absolute()
+    # return path.resolve().absolute()
 
 
 def write_file(path: Union[Path, str], content, encoding="utf-8"):
@@ -42,6 +47,7 @@ def write_file(path: Union[Path, str], content, encoding="utf-8"):
 
 
 def read_rb(path: Union[Path, str]):
+    # remove unexpected characters in file:
     path = Path(path)
     path = repair_path(path)
     try:
