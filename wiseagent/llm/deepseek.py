@@ -44,7 +44,7 @@ class DeepSeekAPI(BaseLLM):
         logger.info(f"DeepSeekAPI: set api_key successfully")
 
     def llm_ask(
-        self, memory: List[Message] = None, system_prompt: str = None,  handle_stream_function = None, verbose: bool = True
+        self, memory: List[Message] = None, system_prompt: str = None, handle_stream_function=None, verbose: bool = True
     ) -> str:
         """Generate a response from the model using the given prompt.
 

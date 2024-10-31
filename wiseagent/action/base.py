@@ -72,7 +72,7 @@ class BaseAction(BaseModel):
             command_list (List[str]): The list of commands to be checked and potentially modified.
         """
 
-    def llm_ask(self, prompt, memory: List[Message] = None, system_prompt: str = None, handle_stream_function = None):
+    def llm_ask(self, prompt, memory: List[Message] = None, system_prompt: str = None, handle_stream_function=None):
         """Ask the LLM to generate a response to the given prompt."""
         agent_data: AgentData = get_current_agent_data()
         agent_core = get_agent_core()

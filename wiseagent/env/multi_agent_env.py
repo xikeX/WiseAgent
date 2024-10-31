@@ -1,9 +1,9 @@
-from concurrent.futures import ThreadPoolExecutor
 import os
 import queue
 import re
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Any
 
@@ -39,7 +39,8 @@ class MultiAgentEnv(BaseEnvironment):
     agent_name_list: list[str] = None
     use_stream: bool = False
     thread_pool: Any = None
-    def __init__(self, agent_name_list: list[str] = None,use_stream = False):
+
+    def __init__(self, agent_name_list: list[str] = None, use_stream=False):
         super().__init__()
         """Initialize the MultiAgentReporter with a list of agents.
         
@@ -112,10 +113,10 @@ class MultiAgentEnv(BaseEnvironment):
             else:
                 try:
                     # Create the parent folder of the file if it does not exist
-                    parent_folder = os.path.dirname(file_upload_stream_message.appendix['file_name'])
-                    if not os.path.exists(parent_folder):   
+                    parent_folder = os.path.dirname(file_upload_stream_message.appendix["file_name"])
+                    if not os.path.exists(parent_folder):
                         os.makedirs(parent_folder)
-                    with open(file_upload_stream_message.appendix['file_name'], "a") as f:
+                    with open(file_upload_stream_message.appendix["file_name"], "a") as f:
                         f.write(current_message)
                 except Exception as e:
                     logger.error(f"Error while writing message to file: {e}")
@@ -138,7 +139,7 @@ class MultiAgentEnv(BaseEnvironment):
 
     def handle_stream_message(self, message: Message) -> bool:
         """the single agent report will report the message to the website."""
-        if  message.env_handle_type == EnvironmentHandleType.FILE_UPLOAD:
+        if message.env_handle_type == EnvironmentHandleType.FILE_UPLOAD:
             # Create a new thread from the thread pool to handel file_upload_stream_message
             self.thread_pool.submit(self.handle_file_upload_stream_message, message)
 

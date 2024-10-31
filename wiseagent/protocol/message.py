@@ -137,6 +137,7 @@ class FileUploadMessage(Message):
             raise ValueError("file_name must be specified")
         if self.file_content is b"" and self.file_name:
             from wiseagent.common.file_io import read_rb
+
             self.file_content = read_rb(self.file_name)
 
     def to_json(self) -> str:

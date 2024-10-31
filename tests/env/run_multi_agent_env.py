@@ -36,6 +36,7 @@ def main():
     env = MultiAgentEnv(use_stream=True)
     env._listen_user_input()
 
-#@bob 写一个2048游戏
+
+# @bob 写一个2048游戏
 if __name__ == "__main__":
     main()
