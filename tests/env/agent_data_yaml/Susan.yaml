@@ -21,7 +21,7 @@ action_ability :
 
 llm_ability :
    llm_name : "DeepSeek"
-   api_key : "sk-cf379bba083e4827affc9ec61ee20d31"
+   api_key : "sk-6490ad717f4a4c77996feea60504f26a"
 
 life_schedule_ability: "ReActLifeSchedule"
 

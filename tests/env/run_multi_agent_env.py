@@ -33,9 +33,10 @@ def main():
     for agent_data in agent_data_list:
         agent_core.start_agent_life(agent_data)
     # run env
-    env = MultiAgentEnv()
+    env = MultiAgentEnv(use_stream=True)
     env._listen_user_input()
 
 
+# @bob 写一个2048游戏
 if __name__ == "__main__":
     main()

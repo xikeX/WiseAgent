@@ -15,7 +15,7 @@ from openai.types.chat import ChatCompletionChunk
 from wiseagent.common.annotation import singleton
 from wiseagent.config import logger
 from wiseagent.llm.base_llm import BaseLLM
-from wiseagent.protocol.message import AIMessage, Message
+from wiseagent.protocol.message import STREAM_END_FLAG, AIMessage, Message
 
 
 @singleton
@@ -44,7 +44,7 @@ class DeepSeekAPI(BaseLLM):
         logger.info(f"DeepSeekAPI: set api_key successfully")
 
     def llm_ask(
-        self, memory: List[Message] = None, system_prompt: str = None, queue: queue.Queue = None, verbose: bool = True
+        self, memory: List[Message] = None, system_prompt: str = None, handle_stream_function=None, verbose: bool = True
     ) -> str:
         """Generate a response from the model using the given prompt.
 
@@ -64,14 +64,18 @@ class DeepSeekAPI(BaseLLM):
                 model="deepseek-chat", messages=messages, stream=True, temperature=self.temperature
             )
             collected_messages = []
+            stream_message = ""
             for chunk in response:
                 chunk_message = chunk.choices[0].delta.content or "" if chunk.choices else ""  # extract the message
                 if verbose:
                     print(chunk_message, end="")
+                stream_message += chunk_message
+                if handle_stream_function:
+                    stream_message = handle_stream_function(stream_message)
                 collected_messages.append(chunk_message)
                 # If the queue is not None: the response will be put into the queue.
-                if queue:
-                    queue.put(chunk_message)
+            if handle_stream_function:
+                handle_stream_function(STREAM_END_FLAG)
             rsp = "".join(collected_messages)
         return rsp
 

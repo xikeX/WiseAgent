@@ -37,10 +37,10 @@ class EnvBaseReceiver(BaseReporter, ABC):
         agent_core = get_agent_core()
         agent_core.get_monitor().resgiter(self)
 
-    def handle_stream_message(self, agent_data: "AgentData", message: Message):
+    def handle_stream_message(self, message: Message) -> bool:
         """Fake function to avoid abstractmethod check in baseclass. This function will be replace in the __init__"""
 
-    def handle_message(self, agent_data: "AgentData", message: Message):
+    def handle_message(self, message: Message) -> bool:
         """Fake function to avoid abstractmethod check in baseclass. This function will be replace in the __init__"""
 
 

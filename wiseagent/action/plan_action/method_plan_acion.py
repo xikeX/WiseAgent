@@ -67,7 +67,7 @@ XML_INSTRUCTION_PROMPT = """
 {current_task}
 ## Instruction
 Please generate a plan for the agent to complete the task.
-Your respond must contain the thought and a json for action command list.
+Your respond must contain the thought and a xml for action command list.
 The xml format is:
 ```xml
 <action_list>
@@ -104,7 +104,8 @@ class MethodPlanActionData(BaseActionData):
     expericence: str = ""
     plan_list: List[dict] = []
     current_plan_index: int = 0
-    parse_type = "xml"
+    parse_type: str = "xml"
+    instruction_prmeompt: str = ""
 
     def __init__(self, agent_data: AgentData):
         super().__init__()
@@ -127,6 +128,7 @@ class MethodPlanAction(BasePlanAction):
     action_name: str = "MethodPlan"
     max_tries: int = 3
     parse_json_data: dict = {}
+    parse_function: dict = {}
 
     def __init__(self):
         super().__init__()
@@ -152,11 +154,9 @@ class MethodPlanAction(BasePlanAction):
         i, error = 0, "start"
         while error and i < self.max_tries:
             rsp = self.llm_ask(instruction_prompt, system_prompt=system_prompt)
-            json_data, error = self.parse_function[agent_data.parse_type](rsp)
+            json_data, error = self.parse_function[plan_action_data.parse_type](rsp)
             prompt = instruction_prompt + f"Your respond is :{rsp}"
             prompt += f"But the data format is not valid.\nError:{error} \nplease try again."
-            rsp = self.llm_ask(prompt, system_prompt=system_prompt)
-            json_data, error = parse_json_data(rsp)
             i += 1
         thoughts = rsp[: rsp.find("```json")] if rsp.find("```json") != -1 else rsp
         if json_data:

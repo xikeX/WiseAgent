@@ -39,3 +39,7 @@ scikit-learn
 jupyter_client
 jupyter
 ipykernel
+
+# Editor Env
+pyautogui
+pynput

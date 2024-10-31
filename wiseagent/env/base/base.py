@@ -43,13 +43,13 @@ class BaseEnvironment(BaseModel):
         self.env_reporter.add_message(message)
 
     @abstractmethod
-    def handle_stream_message(self, agent_data: "AgentData", message: Message):
+    def handle_stream_message(self, message: Message) -> bool:
         """
         Handle stream message from agent system
         """
 
     @abstractmethod
-    def handle_message(self, agent_data: "AgentData", message: Message):
+    def handle_message(self, message: Message) -> bool:
         """
         Handle message from agent system
         """
