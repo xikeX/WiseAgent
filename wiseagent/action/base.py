@@ -72,7 +72,7 @@ class BaseAction(BaseModel):
             command_list (List[str]): The list of commands to be checked and potentially modified.
         """
 
-    def llm_ask(self, prompt, memory: List[Message] = None, system_prompt: str = None):
+    def llm_ask(self, prompt, memory: List[Message] = None, system_prompt: str = None, handle_stream_function = None):
         """Ask the LLM to generate a response to the given prompt."""
         agent_data: AgentData = get_current_agent_data()
         agent_core = get_agent_core()
@@ -85,7 +85,7 @@ class BaseAction(BaseModel):
             raise Exception("LLM not found")
         if not llm.check() and agent_data.llm_ability["api_key"]:
             llm.set_api_key(agent_data.llm_ability["api_key"])
-        rsp = llm.llm_ask(memory=memory, system_prompt=system_prompt)
+        rsp = llm.llm_ask(memory=memory, system_prompt=system_prompt, handle_stream_function=handle_stream_function)
         return rsp
 
 

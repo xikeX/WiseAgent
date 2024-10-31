@@ -12,7 +12,7 @@ from wiseagent.core.agent_core import get_agent_core
 from wiseagent.env.editor_env import EditorEnv
 from wiseagent.env.multi_agent_env import MultiAgentEnv
 
-yaml_file = r"tests\run\run_engineer_agent\engineer_agent.yaml"
+yaml_file = r"tests\env\engineer_agent.yaml"
 
 
 def main():

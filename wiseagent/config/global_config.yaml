@@ -5,8 +5,8 @@ perceptron_module_path:
 
 # Monitor Cofig
 base_monitor_module_path: "wiseagent.monitor.monitor"
-reporter_module_path:
-  - "wiseagent.monitor.reporter.text_reporter"
+reporter_module_path: []
+  # - "wiseagent.monitor.reporter.text_reporter"
 
 # Life Schedule
 life_manager_module_path: "wiseagent.life.life_manager"

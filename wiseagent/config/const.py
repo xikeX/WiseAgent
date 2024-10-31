@@ -27,3 +27,5 @@ WORKING_DIR = ROOT_PATH.parent / "workspace"
 DATA_PATH = ROOT_PATH.parent / "data"
 LOG_PATH = ROOT_PATH.parent / "log"
 TEMP_PATH = ROOT_PATH.parent / "temp"
+
+STREAM_END_FLAG = "[STREAM_END_FLAG]"

@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+import os
 import queue
 import re
 import threading
@@ -5,6 +7,7 @@ import time
 from datetime import datetime
 from typing import Any
 
+from altair import Stream
 from pydantic import BaseModel
 
 from wiseagent.agent_data.base_agent_data import AgentData
@@ -15,6 +18,7 @@ from wiseagent.env.base.base import BaseEnvironment
 from wiseagent.protocol.message import (
     STREAM_END_FLAG,
     EnvironmentHandleType,
+    FileUploadMessage,
     Message,
     UserMessage,
 )
@@ -33,8 +37,9 @@ class MultiAgentEnv(BaseEnvironment):
     environment_reporter: Any = None
     message_cache: Any = None
     agent_name_list: list[str] = None
-
-    def __init__(self, agent_name_list: list[str] = None):
+    use_stream: bool = False
+    thread_pool: Any = None
+    def __init__(self, agent_name_list: list[str] = None,use_stream = False):
         super().__init__()
         """Initialize the MultiAgentReporter with a list of agents.
         
@@ -61,8 +66,11 @@ class MultiAgentEnv(BaseEnvironment):
             other_agent_name = [agent_name for agent_name in self.agent_name_list if agent_name != agent_data.name]
             env_description = ENV_DESCRIPTION.format(agent_name_list=",".join(other_agent_name))
             agent_data.current_environment = env_description
-
         self.message_cache = []
+
+        if use_stream:
+            self.use_stream = True
+            self.thread_pool = ThreadPoolExecutor(max_workers=5)
 
     def env_report(self, message: Message):
         """Report the message to the environment and log it to a file."""
@@ -89,6 +97,29 @@ class MultiAgentEnv(BaseEnvironment):
             env_description = ENV_DESCRIPTION.format(agent_name_list=",".join(other_agent_name))
             agent_data.current_environment = env_description
 
+    def handle_file_upload_stream_message(self, file_upload_stream_message: FileUploadMessage) -> bool:
+        # get the sub message from upload stream message
+        current_message = ""
+        while True:
+            try:
+                current_message = file_upload_stream_message.stream_queue.get(timeout=30)
+            except Exception as e:
+                logger.error(f"Error while getting message from file upload stream message: {e}")
+                return False
+            # write the message to the code file
+            if current_message == STREAM_END_FLAG:
+                break
+            else:
+                try:
+                    # Create the parent folder of the file if it does not exist
+                    parent_folder = os.path.dirname(file_upload_stream_message.appendix['file_name'])
+                    if not os.path.exists(parent_folder):   
+                        os.makedirs(parent_folder)
+                    with open(file_upload_stream_message.appendix['file_name'], "a") as f:
+                        f.write(current_message)
+                except Exception as e:
+                    logger.error(f"Error while writing message to file: {e}")
+
     def handle_message(self, message: Message) -> bool:
         """Get the message from the wiseagent system and send to th the wiseagent back."""
         # The Report Message and Receiver Message is to agent system. So in here will be a litle different
@@ -107,15 +138,10 @@ class MultiAgentEnv(BaseEnvironment):
 
     def handle_stream_message(self, message: Message) -> bool:
         """the single agent report will report the message to the website."""
-        stream_queue = message.stream_queue
-        while True:
-            try:
-                message_block = stream_queue.get(timeout=1)
-            except queue.Empty:
-                continue
-            if message_block == None or message_block == STREAM_END_FLAG:
-                break
-            logger.info(message_block)
+        if  message.env_handle_type == EnvironmentHandleType.FILE_UPLOAD:
+            # Create a new thread from the thread pool to handel file_upload_stream_message
+            self.thread_pool.submit(self.handle_file_upload_stream_message, message)
+
         return True
 
     def add_user_mesage(self, target_agent_name, content):

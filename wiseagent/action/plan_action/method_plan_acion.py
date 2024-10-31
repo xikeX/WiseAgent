@@ -67,7 +67,7 @@ XML_INSTRUCTION_PROMPT = """
 {current_task}
 ## Instruction
 Please generate a plan for the agent to complete the task.
-Your respond must contain the thought and a json for action command list.
+Your respond must contain the thought and a xml for action command list.
 The xml format is:
 ```xml
 <action_list>

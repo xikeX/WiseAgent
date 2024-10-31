@@ -21,7 +21,7 @@ class BaseLLM(BaseModel, ABC):
     llm_name: str = ""
 
     @abstractmethod
-    def llm_ask(self, memory: List[Message] = None, system_prompt: str = None, queue: queue.Queue = None) -> str:
+    def llm_ask(self, memory: List[Message] = None, system_prompt: str = None, handle_stream_function = None) -> str:
         """Ask the LLM a question and return the answer"""
         pass
 
