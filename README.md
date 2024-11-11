@@ -1,21 +1,24 @@
+
 # WiseAgent
 
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+![License](https://img.shields.io/badge/License-MIT-blue.svg)
 
 ## Overview
 
-WiseAgent is a multi-agent framework designed to facilitate continuous learning and collaboration among agents. It provides a flexible and scalable environment for developing and deploying intelligent agents that can adapt and improve over time.
+`WiseAgent` is a multi-agent framework designed to promote continuous learning and collaboration among agents. It provides a flexible and scalable environment for developing and deploying agents that can adapt and improve over time through interaction with their environment.
 
 ## Features
 
-- **Multi-Agent Support**: Easily create and manage multiple agents within a single environment.
-- **Continuous Learning**: Agents can learn and adapt based on new data and experiences.
-- **Scalconfig**: Designed to scale with your project, from small-scale experiments to large-scale deployments.
-- **Flexible Architecture**: Customize and extend the framework to fit your specific needs.
+- **Single-Agent Support**: Supports environments for both single and multiple agents, making it easy for developers to get started while also meeting the needs of complex scenarios.
+- **Multi-Agent Support**: Facilitates interaction and collaboration among multiple agents, promoting knowledge sharing and strategy optimization between them.
+
+- **Continuous Learning(TODO)**: Agents can learn from their environment and continuously improve their strategies through interaction.
+- **Scalability**: The framework is designed with scalability in mind, capable of handling a large number of agents and complex environments. It balances performance and resource consumption to achieve efficient multi-agent interactions.
+- **Flexible Architecture**: The framework adopts a modular design, allowing developers to customize and extend agents and environments as needed. It provides rich interfaces and tools to facilitate secondary development by developers.
 
 ## Installation
 
-To install WiseAgent, simply use pip:
+To install `WiseAgent`, use pip:
 
 ```bash
 pip install -e .
@@ -23,65 +26,126 @@ pip install -e .
 
 ## Usage
 
-Here's a quick example to get you started:
+1. Configure the model file `config/env.yaml`
+    ```yaml
+    LLM:
+        type: Model type, example: "openai"
+        api_key: "Model API key"
+        base_url: "Model base URL"
+        model_name: "Model name"
+        verbose: "Whether to print model output, example: True"
 
-```python
-from wiseagent import Agent, Environment
+    EMBEDDING:
+        illustration: "EMBEDDING is optional and can be omitted"
+        type: Model type, example: "openai"
+        api_key: "Model API key"
+        base_url: "Model base URL"
+        model_name: "Model name"
 
-# Create an environment
-env = Environment()
 
-# Create an agent
-agent = Agent(name="Learner1")
+    ```
 
-# Add the agent to the environment
-env.add_agent(agent)
+2. Below is a quick example to help you get started; this script can be found in `example/run_agent/run_engineer.py`.
 
-# Start the learning process
-env.start()
-```
+    ```python
+    from wiseagent.action.normal_action.write_code import WriteCodeAction
+    from wiseagent.core.agent import Agent
 
-For more detailed examples and advanced usage, please refer to the [documentation](#documentation).
+    def get_user_input(engineer):
+        while True:
+            user_input = input("Please input your task:")
+            if user_input == "exit":
+                break
+            # Let the agent perform actions based on user input
+            engineer.ask(user_input)
 
+    def main():
+        # Create an agent
+        engineer = Agent.from_default(name="Bob", description="Bob is an engineer")
+        # Register an action/tool
+        engineer.register_action(WriteCodeAction())
+        # Start the agent
+        engineer.life()
+        # Get user input and execute actions
+        get_user_input(engineer)
+        
+    if __name__ == "__main__":
+        main()
+    ```
+
+3. Additionally, agents and actions can also be created via a `.yaml` configuration file.
+
+    ```yaml
+    name: "(Required) Name of the agent, example: Bob"
+    description: "(Optional) Description of the agent"
+
+    action_list:
+    - "MethodPlanAction"
+    - "List of behaviors, indicating behavior classes, where MethodPlanAction for planning behaviors is mandatory."
+    - "Other behaviors include ArxivAction, WriteCodeAction, etc., which can be found in wiseagent\action\normal_action."
+
+    life_schedule_config: "(Required) Execution mode, example: ReActLifeSchedule"
+    ```
+    Specific examples can be found in the `example` directory.
+
+    ```python
+    from wiseagent.core.agent import Agent
+
+    def get_user_input(engineer):
+        while True:
+            user_input = input("Please input your task:")
+            if user_input == "exit":
+                break
+            # Let the agent perform actions based on user input
+            engineer.ask(user_input)
+            
+    def main():
+        agent: Agent = Agent.from_yaml_file(yaml_file)
+        # Start the agent
+        agent.life()
+        # Get user input and execute actions
+        get_user_input(agent)
+
+    if __name__ == "__main__":
+        main()
+    ```
+
+4. start the agent web page and server
+
+    server
+    ```bash
+    python wiseagent\server\server.py
+    ```
+    web page
+    ```bash
+    streamlit run wiseagent\web\web_page.py
+    ```
+
+## Features
+
+- **Agent and Action Management**: The framework allows for the creation and management of agents and actions, enabling developers to define and execute complex behaviors.
+For more detailed usage examples and advanced usage, please refer to the [Documentation](#documentation).
 ## Documentation
 
-For detailed documentation, including API reference, tutorials, and examples, please visit the [WiseAgent Documentation](https://yourusername.github.io/wiseagent).
+For more developer documentation, please refer to the [Developer Documentation](#developer-documentation).
 
 ## Contributing
 
-We welcome contributions from the community! If you'd like to contribute to WiseAgent, please follow these steps:
+We welcome community contributions! If you would like to contribute code to WiseAgent, please follow these steps:
 
 1. Fork the repository.
 2. Create a new branch (`git checkout -b feature/your-feature-name`).
-3. Make your changes and commit them (`git commit -am 'Add some feature'`).
-4. Push to the branch (`git push origin feature/your-feature-name`).
-5. Create a new Pull Request.
-
-Please read our [Contributing Guidelines](CONTRIBUTING.md) for more details.
+3. Make changes and commit (`git commit -am 'Add some feature'`).
+4. Push to your branch (`git push origin feature/your-feature-name`).
 
 ## License
 
-WiseAgent is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+`WiseAgent` follows the MIT license. For more details, see the [LICENSE](LICENSE) file.
 
 ## Contact
 
-If you have any questions or need support, please feel free to reach out to us at [your.email@example.com](mailto:your.email@example.com).
+If you have any questions or need support, feel free to contact us.
 
 ---
-
-Happy coding! 🚀
-
-
-
-### 说明：
-
-这部分文档实际上并没有完全写完，还有很多问题
-
-1. **Overview**: 简要介绍你的项目，说明它的主要功能和用途。
-2. **Features**: 列出项目的主要特点和优势。
-3. **Installation**: 提供安装项目的步骤。
-4. **Usage**: 提供一个简单的使用示例，帮助用户快速上手。
-5. **Documentation**: 提供详细的文档链接，方便用户深入了解项目。
-6. **Contributing**: 说明如何为项目贡献代码，鼓励社区参与。
-7. **License**: 说明项目的开源许可证。
-8. **Contact**: 提供联系方式，方便用户提问和寻求支持。
+If you like this project, please give it a star!
+```

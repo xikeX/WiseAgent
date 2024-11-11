@@ -107,7 +107,16 @@ pip install -e .
     if __name__ == "__main__":
         main()
     ```
-
+4. 启动智能体网页端和服务端
+    服务端
+    ```bash
+    python wiseagent\server\server.py
+    ```
+    网页端
+    ```bash
+    streamlit run wiseagent\web\web_page.py
+    ```
+    
 更多详细的使用示例和高级用法，请参考[文档](#documentation)。
 ## Documentation
 

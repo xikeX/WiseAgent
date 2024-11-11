@@ -179,7 +179,6 @@ class WriteCodeAction(BaseAction):
         match = write_code_pattern.findall(rsp)
         for file_name, code in match:
             write_file(file_name, code)
-            FileUploadMessage(file_name=file_name).send_message()
             file_list.append(file_name)
             code_list.append(code)
         return file_list, code_list

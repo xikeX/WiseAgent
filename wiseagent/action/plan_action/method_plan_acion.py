@@ -160,10 +160,16 @@ class MethodPlanAction(BasePlanAction):
             prompt = instruction_prompt + f"Your respond is :{rsp}"
             prompt += f"But the data format is not valid.\nError:{error} \nplease try again."
             i += 1
-        thoughts = rsp[: rsp.find("```json")] if rsp.find("```json") != -1 else rsp
+        thoughts = (
+            rsp[: rsp.find(f"```{plan_action_data.parse_type}")]
+            if rsp.find(f"```{plan_action_data.parse_type}") != -1
+            else rsp
+        )
         if command_data:
             command_list = parse_command(command_data)
-        ThoughtMessage(content=rsp, cause_by="MethodPlanAction").send_message()
+        ThoughtMessage(
+            content=json.dumps([c.to_dict() for c in command_list], ensure_ascii=False), cause_by="MethodPlanAction"
+        ).send_message()
         return {"thoughts": thoughts, "action_command_list": command_list}
 
     @action()
