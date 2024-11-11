@@ -20,6 +20,15 @@ class ActionCommand(Command):
     action_method: str = ""
     args: Dict = {}
 
+    def to_dict(self):
+        return {
+            "command_name": self.command_name,
+            "cause_by": self.cause_by,
+            "action_name": self.action_name,
+            "action_method": self.action_method,
+            "args": self.args,
+        }
+
 
 def parse_command(data: List[Dict]):
     command_list = []

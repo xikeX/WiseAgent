@@ -1,6 +1,6 @@
 
-name : "Isaac"
-description : "Isaac like to chat with people. And he is a good listener."
+name : "Steve"
+description : "Steve like to chat with people. And he is a good listener."
 
 action_list :
   - "MethodPlanAction"
