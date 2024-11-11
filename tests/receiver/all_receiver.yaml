@@ -1,4 +1,0 @@
-name : "All_receiver"
-receive_ability :
-  - "NetworkPerceptron"
-  - "TextPerceptron"

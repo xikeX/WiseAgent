@@ -1,3 +1,0 @@
-name : "Test_report"
-report_ability :
-  - "TextReporter"
