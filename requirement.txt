@@ -43,3 +43,6 @@ ipykernel
 # Editor Env
 pyautogui
 pynput
+
+# UniTest
+pytest

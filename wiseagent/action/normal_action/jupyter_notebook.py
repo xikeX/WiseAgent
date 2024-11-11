@@ -1,15 +1,18 @@
-import uuid
-from typing import Any
+"""
+Author: Huang Weitao
+Date: 2024-11-03 15:40:54
+LastEditors: Huang Weitao
+LastEditTime: 2024-11-08 17:03:34
+Description: 
+"""
 
-import nbformat as nbf
-from jupyter_client import BlockingKernelClient, KernelManager
+
 from pydantic import ConfigDict
 
 from wiseagent.action.action_annotation import action
-from wiseagent.action.base import BaseAction, BaseActionData
-from wiseagent.agent_data.base_agent_data import AgentData, get_current_agent_data
-from wiseagent.common.file_io import read_rb, repair_path
-from wiseagent.protocol.message import FileUploadMessage
+from wiseagent.action.base_action import BaseAction, BaseActionData
+from wiseagent.common.protocol_message import FileUploadMessage
+from wiseagent.common.utils import read_rb, repair_path
 from wiseagent.tools.notebook_execute_tool import JupyterNotebookTool
 
 
@@ -23,10 +26,9 @@ class JupyterNotebookActionData(BaseActionData):
 
 
 class JupyterNotebookAction(BaseAction):
-    action_name: str = "JupyterNotebookAction"
     action_description: str = "This action is used to execute jupyter notebook code"
 
-    def init_agent(self, agent_data: AgentData):
+    def init_agent(self, agent_data: "AgentData"):
         agent_data.set_action_data(self.action_name, JupyterNotebookActionData())
 
     def get_notnotebook_toolebook(self) -> JupyterNotebookTool:
@@ -40,10 +42,10 @@ class JupyterNotebookAction(BaseAction):
         """
         notebook_tool = self.get_notnotebook_toolebook()
         output, img_list = notebook_tool.execute_code(code_block)
-        agent_data: AgentData = get_current_agent_data()
-        temp_save_file_name = agent_data.agent_id + "temp.ipynb"
-        temp_save_file_name = repair_path(temp_save_file_name)
-        self._save_notebook(temp_save_file_name)
+        # agent_data: AgentData = get_current_agent_data()
+        # temp_save_file_name = agent_data.agent_id + "temp.ipynb"
+        # temp_save_file_name = repair_path(temp_save_file_name)
+        # self._save_notebook(temp_save_file_name)
         return (
             "Code block executed \nOutput:\n" + output + "" if not img_list else "\nImage Size:\n" + str(len(img_list))
         )
@@ -53,22 +55,22 @@ class JupyterNotebookAction(BaseAction):
         notebook_tool.shutdown()
         return "Notebook Shut Down"
 
-    def _save_notebook(self, filename, upload_file=False):
-        filename = repair_path(filename)
+    def _save_notebook(self, file_name, upload_file=False):
+        file_name = repair_path(file_name)
         notebook_tool = self.get_notnotebook_toolebook()
-        notebook_tool.save_notebook(filename)
+        notebook_tool.save_notebook(file_name)
         if upload_file:
-            FileUploadMessage(file_content=read_rb(filename)).send_message()
-        return filename
+            FileUploadMessage(file_name=str(file_name), file_content=read_rb(file_name)).send_message()
+        return file_name
 
     @action()
-    def save_notebook(self, filename):
+    def save_notebook(self, file_name):
         """Save jupyter notebook.
         Args:
             filename (str): filename to save
         """
-        filename = self._save_notebook(filename, upload_file=True)
-        return f"Notebook Saved. The file is saved as {filename}"
+        file_name = self._save_notebook(file_name, upload_file=True)
+        return f"Notebook Saved. The file is saved as {file_name}"
 
     def close(self):
         self.shutdown()

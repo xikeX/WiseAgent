@@ -5,22 +5,20 @@ LastEditors: Huang Weitao
 LastEditTime: 2024-09-28 20:16:33
 Description: 
 """
-import inspect
-from dataclasses import dataclass
-from datetime import datetime
+import json
 from typing import Dict, List
 
-from pydantic import BaseModel
-
 from wiseagent.action.action_annotation import action
-from wiseagent.action.base import BaseActionData
-from wiseagent.action.plan_action.base_plan_action import BasePlanAction
-from wiseagent.agent_data.base_agent_data import AgentData, get_current_agent_data
-from wiseagent.common.annotation import singleton
-from wiseagent.common.parse_llm_respond import parse_json_data, parse_xml_data
-from wiseagent.core.agent_core import get_agent_core
-from wiseagent.protocol.action_command import ActionCommand, parse_command
-from wiseagent.protocol.message import ThoughtMessage
+from wiseagent.action.base_action import BaseActionData, BasePlanAction
+from wiseagent.common.parse_llm_respond import parse_command_xml_data, parse_json_data
+from wiseagent.common.protocol_command import ActionCommand, parse_command
+from wiseagent.common.protocol_message import (
+    CreateTaskMessage,
+    FinishTaskMessage,
+    ThoughtMessage,
+)
+from wiseagent.common.singleton import singleton
+from wiseagent.core.agent import Agent, get_current_agent_data
 
 JSON_INSTRUCTION_PROMPT = """
 ## Plan List
@@ -107,32 +105,36 @@ class MethodPlanActionData(BaseActionData):
     parse_type: str = "xml"
     instruction_prmeompt: str = ""
 
-    def __init__(self, agent_data: AgentData):
+    def __init__(self, agent_data: Agent):
         super().__init__()
-        # if agent_data has experience, use it, otherwise use the default experience
-        if hasattr(agent_data, "parse_type"):
-            self.parse_type = agent_data.parse_type or "xml"
+
+        # Initialize the data from action_config
+        action_config = agent_data.get_action_config(
+            "MethodPlanAction",
+        ) or {"parse_type": "xml", "expericence": None}
+        self.parse_type = action_config.get("parse_type", None) or "xml"
+        self.expericence = action_config.get("expericence", None) or JSON_EXPERIENCE
+
+        # Select the instruction prompt
         if self.parse_type == "json":
             self.instruction_prompt = JSON_INSTRUCTION_PROMPT
-            self.expericence = agent_data.get_experience("MethodPlanAction") or JSON_EXPERIENCE
         else:
             self.instruction_prompt = XML_INSTRUCTION_PROMPT
-            self.expericence = agent_data.get_experience("MethodPlanAction") or XML_EXPERIENCE
-        pass
 
 
 @singleton
 class MethodPlanAction(BasePlanAction):
     """The planner of the agent, which is used to plan the action of the agent"""
 
-    action_name: str = "MethodPlan"
     max_tries: int = 3
-    parse_json_data: dict = {}
     parse_function: dict = {}
 
     def __init__(self):
         super().__init__()
-        self.parse_function = {"json": parse_json_data, "xml": parse_xml_data}
+        self.parse_function = {"json": parse_json_data, "xml": parse_command_xml_data}
+
+    def init_agent(self, agent_data: Agent):
+        agent_data.set_action_data("MethodPlanAction", MethodPlanActionData(agent_data))
 
     def plan(self, command_list: List[ActionCommand]) -> Dict:
         """Execute the plan action
@@ -142,7 +144,7 @@ class MethodPlanAction(BasePlanAction):
         Returns:
             Dict: The result of the plan action, which may include thoughts, action command list, etc.
         """
-        agent_data: AgentData = get_current_agent_data()
+        agent_data: Agent = get_current_agent_data()
         plan_action_data = agent_data.get_action_data("MethodPlanAction")
         system_prompt = agent_data.get_agent_system_prompt(agent_example=plan_action_data.expericence)
         instruction_prompt = plan_action_data.instruction_prompt.format(
@@ -154,57 +156,64 @@ class MethodPlanAction(BasePlanAction):
         i, error = 0, "start"
         while error and i < self.max_tries:
             rsp = self.llm_ask(instruction_prompt, system_prompt=system_prompt)
-            json_data, error = self.parse_function[plan_action_data.parse_type](rsp)
+            command_data, error = self.parse_function[plan_action_data.parse_type](rsp)
             prompt = instruction_prompt + f"Your respond is :{rsp}"
             prompt += f"But the data format is not valid.\nError:{error} \nplease try again."
             i += 1
         thoughts = rsp[: rsp.find("```json")] if rsp.find("```json") != -1 else rsp
-        if json_data:
-            command_list = parse_command(json_data, parse_type="json")
-        thought_message = ThoughtMessage(
-            send_to=agent_data.name,
-            send_from=agent_data.name,
-            content=rsp,
-            time_stamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            cause_by="MethodPlanAction",
-            track=[f"file{__file__},line{inspect.currentframe().f_lineno}"],
-        )
-        agent_core = get_agent_core()
-        agent_core.monitor.add_message(thought_message)
+        if command_data:
+            command_list = parse_command(command_data)
+        ThoughtMessage(content=rsp, cause_by="MethodPlanAction").send_message()
         return {"thoughts": thoughts, "action_command_list": command_list}
 
     @action()
-    def finish_current_task(self, task_description):
+    def finish_current_task(self, task_id, task_description):
         """Use this action to mark the current task as done.
-
         Args:
-            task_description (str): The description of the new task"""
+            task_id(int): The id of the task to be finished.
+            task_description (str): The description of the new task.
+        """
         agent_data = get_current_agent_data()
         plan_action_data = agent_data.get_action_data("MethodPlanAction")
-        if len(plan_action_data.plan_list) > plan_action_data.current_plan_index:
-            plan_action_data.plan_list[plan_action_data.current_plan_index]["status"] = "done"
-            plan_action_data.current_plan_index += 1
+        if task_id < len(plan_action_data.plan_list):
+            plan_action_data.plan_list[task_id]["status"] = "done"
+            current_plan_index = plan_action_data.current_plan_index
+            FinishTaskMessage(
+                content=json.dumps(
+                    {
+                        "task_id": task_id,
+                        "description": plan_action_data.plan_list[task_id]["description"],
+                        "status": "done",
+                    }
+                )
+            ).send_message()
+            while (
+                current_plan_index < len(plan_action_data.plan_list)
+                and plan_action_data.plan_list[current_plan_index]["status"] == "done"
+            ):
+                plan_action_data.current_plan_index += 1
+
         return "Finish current task success."
 
     @action()
     def create_new_task(self, task_description: str):
         """Use this action to create a new task.
-
         Args:
             task_description (str): The description of the new task
         """
         agent_data = get_current_agent_data()
         plan_action_data = agent_data.get_action_data("MethodPlanAction")
-        plan_action_data.plan_list.append({"description": task_description, "status": "TODO"})
-        return "create new task success."
+        task_id = len(plan_action_data.plan_list)
+        plan_action_data.plan_list.append({"task_id": task_id, "description": task_description, "status": "TODO"})
+        CreateTaskMessage(
+            content=json.dumps({"task_id": task_id, "description": task_description, "status": "TODO"})
+        ).send_message()
+        return f"create new task success. Task Id:{task_id}"
 
     @action()
     def wait_for_task(self):
         """If there is no task, take this action and wait for a new task."""
-        agent_data = get_current_agent_data()
-        agent_data.observe()
-        agent_data.sleep()
-        return ""
+        self.end()
 
     @action()
     def end(self):
@@ -219,10 +228,3 @@ class MethodPlanAction(BasePlanAction):
         for index, plan in enumerate(plan_list):
             res += f"{index}.({plan['status']}) {plan['description']}\n"
         return res
-
-    def init_agent(self, agent_data: AgentData):
-        agent_data.set_action_data("MethodPlanAction", MethodPlanActionData(agent_data))
-
-
-def get_action():
-    return MethodPlanAction()

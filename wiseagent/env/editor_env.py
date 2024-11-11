@@ -18,18 +18,17 @@ import pyautogui
 import pyperclip
 from pynput.keyboard import Controller, Key, KeyCode, Listener
 
-from wiseagent.agent_data.base_agent_data import AgentData
-from wiseagent.common.annotation import singleton
-from wiseagent.config import logger
-from wiseagent.core.agent_core import get_agent_core
-from wiseagent.env.base.base import BaseEnvironment
-from wiseagent.protocol.message import (
+from wiseagent.common.logs import logger
+from wiseagent.common.protocol_message import (
     STREAM_END_FLAG,
     EnvironmentHandleType,
     FileUploadMessage,
     Message,
     UserMessage,
 )
+from wiseagent.common.singleton import singleton
+from wiseagent.core.agent_core import get_agent_core
+from wiseagent.env.base.base import BaseEnvironment
 
 ENV_DESCRIPTION = """
 The environment is a multi-agent environment, which includes {agent_name_list} and user (User).
@@ -110,7 +109,7 @@ class EditorEnv(BaseEnvironment):
         if self.message_cache is not None:
             self.message_cache.append(message)
 
-        if message.env_handle_type == EnvironmentHandleType.COMUNICATION:
+        if message.env_handle_type == EnvironmentHandleType.COMMUNICATION:
             if message.send_to == "user":
                 self.output_use_editor(f"```markdown\nSend from {message.send_from} to user:\n{message.content}\n```\n")
             else:
@@ -189,7 +188,7 @@ class EditorEnv(BaseEnvironment):
         message = UserMessage(
             send_from="User",
             send_to=target_agent_name,
-            env_handle_type=EnvironmentHandleType.COMUNICATION,
+            env_handle_type=EnvironmentHandleType.COMMUNICATION,
             content=content,
             timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )

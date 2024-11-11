@@ -1,13 +1,26 @@
+"""
+Author: Huang Weitao
+Date: 2024-11-03 15:40:54
+LastEditors: Huang Weitao
+LastEditTime: 2024-11-08 16:29:24
+Description: 
+"""
+import json
+import queue
 import re
+from functools import partial
 from typing import Any, List
 
 from wiseagent.action.action_annotation import action
-from wiseagent.action.base import BaseAction, BaseActionData
-from wiseagent.agent_data.base_agent_data import get_current_agent_data
-from wiseagent.common.annotation import singleton
-from wiseagent.common.file_io import read_rb, write_file
-from wiseagent.core.agent_core import get_agent_core
-from wiseagent.protocol.message import CommunicationMessage, FileUploadMessage, Message
+from wiseagent.action.base_action import BaseAction, BaseActionData
+from wiseagent.common.protocol_message import (
+    STREAM_END_FLAG,
+    CommunicationMessage,
+    FileUploadMessage,
+    Message,
+)
+from wiseagent.common.singleton import singleton
+from wiseagent.common.utils import repair_path, write_file
 
 GENERATE_LONG_DOCUMENT_PROMPT = """
 You are a book writing expert, you need to complete a book.
@@ -15,8 +28,8 @@ You are a book writing expert, you need to complete a book.
 ## Topic
 {topic}
 
-## Description
-{description}
+## Topic Description
+{topic_description}
 
 ## Written Content
 {content}
@@ -40,6 +53,7 @@ You are a book writing expert, you need to complete a book. Now you need to comp
 6. Do not appear words such as in addition, in conclusion, in general, etc.
 7. Do not write capter, section, subsection, etc. that do not conform to the writing style of textbooks.
 8. The Specific content must only contain the content of the section, and must not contain the title of the section.
+9. Do not repeate the capter title.
 Please generate the content of this section.
 First, you need to think about what content this section needs to write, and then write this section
 The specific content to be written is output in follwing format.
@@ -137,77 +151,101 @@ class LongDocumentGenerateActionData(BaseActionData):
 class LongDocumentGenerateAction(BaseAction):
     """Generate long document from a list of chapters"""
 
-    action_name: str = "LongDocumentGenerateAction"
     action_description: str = "Generate long document from a list of chapters"
 
     def init_agent(self, agent_data):
         agent_data.set_action_data(self.action_name, LongDocumentGenerateActionData())
 
     @action()
-    def create_long_document(self, topic, description, outline, language="chinese", save_path="result.md"):
+    def create_long_document(self, topic, topic_description, outline, language="chinese", save_path="result.md"):
         """Generate long document from a list of chapters
         Args:
             topic (str): The topic of the document
-            description (str): The description of the document
-            outline (str): The outline of the document
+            topic_description (str): The description of the document
+            outline (list): The outline of the document
             language (str): The language of the document
             save_path (str): The path to save the document, default is "result.md"
+        Example:
+            # The id and father_id is not necessary, just for the convenience of the outline.
+            # "need_write" decides whether the content of the chapter needs to be generated.
+            >>> outline = [
+                {"level":1, "chapter_title":"the first chapter", description:"the first chapter description","need_write":false},
+                {"level":2, "chapter_title":"the first section", description:"the first section description","need_write":false},
+                {"level":3, "chapter_title":"the first subsection", description:"the first subsection description","need_write":true},
+                {"level":2, "chapter_title":"the second section", description:"the second section description","need_write":true},
+                {"level":3, "chapter_title":"the second subsection", description:"the second subsection description","need_write":true},
+            ]
+            >>> create_long_document("topic", "description", outline, language="chinese", save_path="{book_name}.md")
         """
-        # Initialize the content and title list
-        content = ""
-        title = [""] * 3  # List to store titles for different levels
-        # Split the outline into lines and remove empty lines
-        outline_lines = [line for line in outline.split("\n") if line.strip()]
-        content += f"# {topic}\n"
-
-        # Iterate through each line in the outline
-        for i, line in enumerate(outline_lines):
-            # Determine the chapter level by counting the number of dots in the line
-            chapter_level = line.count(".")
-
-            # Handle different levels of headings
-            if chapter_level == 0:
+        if isinstance(outline, str):
+            outline = json.loads(outline)
+        level_list, pre_level = [0, 0, 0], ["", "", ""]
+        format_outline = topic + "\n"
+        # Prepare and format the outline
+        for item in outline:
+            level = item.get("level", None)
+            title = item.get("chapter_title", None)
+            level_list[level - 1] += 1
+            pre_level[level - 1] = ".".join([str(i) for i in pre_level]) + " " + title
+            item["location"] = "\n".join(pre_level[:level]) + " " + title
+            item["full_chapter_title"] = ".".join([str(i) for i in pre_level]) + " " + title
+            format_outline += "#" * level + " " + item["chapter_title"] + "\n"
+        # Generate the document
+        content = topic + "\n"
+        stream_message = FileUploadMessage(
+            file_name=str(repair_path(save_path)), is_stream=True, stream_queue=queue.Queue()
+        ).send_message()
+        for item in outline:
+            level = item.get("level", None)
+            content += "#" * level + " " + item["chapter_title"] + "\n"
+            stream_message.stream_queue.put("\n" + "#" * level + " " + item["chapter_title"] + "\n")
+            if not item.get("need_write", None):
                 continue
-            elif chapter_level <= 3:  # Ensure we don't process more than 3 levels deep
-                title[chapter_level - 1] = line
-                # Add the appropriate number of '#' for the heading level
-                content += f"{'#' * (chapter_level + 1)} {line}\n"
+            prompt = GENERATE_LONG_DOCUMENT_PROMPT.format(
+                topic=topic,
+                topic_description=topic_description,
+                content=content,
+                outline=format_outline,
+                chapter_title=item["location"],
+                chapter_description=item.get("description", None),
+                language=language,
+            )
 
-                # If it's a third-level heading, generate detailed content
-                if chapter_level == 3:
-                    # Construct the chapter title with all relevant levels
-                    chapter_title = "\n".join(f"{'#' * (i + 2)} {t}" for i, t in enumerate(title) if t)
-
-                    # Get the next line as the chapter description, if available
-                    chapter_description = ""
-                    if i + 1 < len(outline_lines) and not outline_lines[i + 1][0].isdigit():
-                        chapter_description = outline_lines[i + 1] if i + 1 < len(outline_lines) else ""
-
-                    # Generate the prompt for the LLM
-                    prompt = GENERATE_LONG_DOCUMENT_PROMPT.format(
-                        topic=topic,
-                        description=description,
-                        content=content,
-                        outline=outline,
-                        chapter_title=chapter_title,
-                        chapter_description=chapter_description,
-                        language=language,
-                    )
-
-                    # Call the LLM to generate the chapter content
-                    response = self.llm_ask(prompt)
-
-                    # Parse the response and add it to the content
-                    chapter_content = "\n".join(
-                        line for line in self.parse_content(response).splitlines() if not line.startswith("#")
-                    )
-                    content += f"{chapter_content}\n"
+            # Call the LLM to generate the chapter content
+            response = self.llm_ask(
+                prompt, handle_stream_function=partial(self.parse_document_stream, upload_mesage=stream_message)
+            )
+            content += f"{self.parse_document(response).strip()}\n"
+        stream_message.stream_queue.put(STREAM_END_FLAG)
         if not content:
             return "No content generated"
         write_file(save_path, content)
-        agent_core = get_agent_core()
-        agent_core.monitor.add_message(FileUploadMessage(file_name=save_path, file_content=read_rb(save_path)))
+        # FileUploadMessage(file_name=save_path).send_message()
         return f"document generated successfully. The path is {save_path}"
+
+    def parse_document_stream(self, rsp_message, upload_mesage: Message):
+        if rsp_message == STREAM_END_FLAG:
+            return ""
+        special_tag = ["<content>", "</content>"]
+        if any(tag.startswith(rsp_message) for tag in special_tag):
+            if "<content>" in rsp_message:
+                upload_mesage.appendix["start_receive_content"] = True
+                return ""
+            elif "</content>" in rsp_message:
+                upload_mesage.appendix["start_receive_content"] = False
+                return ""
+            return rsp_message
+        else:
+            if upload_mesage.appendix.get("start_receive_content", None):
+                upload_mesage.stream_queue.put(rsp_message)
+            return ""
+
+    def parse_document(self, respond):
+        pattern = "<content>\s*(.*?)\s*</content>"
+        matches = re.findall(pattern, respond, re.DOTALL)
+        if len(matches) == 0:
+            return respond
+        return matches[0]
 
     @action()
     def generate_outline(self, topic, description=None, language="chinese"):
@@ -220,67 +258,68 @@ class LongDocumentGenerateAction(BaseAction):
         generate_outline_prompt = GENERATE_OUTLINE_PROMPT.format(
             topic=topic, description=description, language=language
         )
-        respond = self.llm_ask(generate_outline_prompt)
+        steam_mesage = CommunicationMessage(is_stream=True, stream_queue=queue.Queue()).send_message()
+        respond = self.llm_ask(
+            generate_outline_prompt,
+            handle_stream_function=partial(self.parse_outline_stream, upload_mesage=steam_mesage),
+        )
         outline = self.parse_outline(respond)
-        agent_core = get_agent_core()
-        CommunicationMessage(
-            content=f"generate_outline executed successfully.\nThe outline is:\n{outline}"
-        ).send_message()
         return f"generate_outline executed successfully.\nThe outline is:\n{outline}"
+
+    def parse_outline_stream(self, rsp_message, upload_mesage: Message):
+        """Parse outline stream"""
+        if rsp_message == STREAM_END_FLAG:
+            upload_mesage.stream_queue.put(STREAM_END_FLAG)
+            return ""
+        pattern = r'<chapter level="(\d+)">(.*?)</chapter>'
+        chapter_pattern = re.compile(pattern, re.DOTALL)
+        matches = chapter_pattern.findall(rsp_message)
+        if not matches:
+            return rsp_message
+        outline_text = ""
+        upload_mesage.appendix["level_list"] = [0, 0, 0]
+        for level, content in matches:
+            level = int(level) - 1
+            upload_mesage.appendix["level_list"][level] += 1
+            pre_level = ".".join([str(i) for i in upload_mesage.appendix["level_list"][: level + 1]]) + "."
+            if level == 0 or level == 1:
+                upload_mesage.appendix["level_list"][level + 1] = 0
+                outline_text += f"{pre_level} {content}\n"
+            elif level == 2:
+                chapter_name = re.search(r"<chapter_name>(.*?)</chapter_name>", content, re.DOTALL).group(1)
+                chapter_description = re.search(
+                    r"<chapter_description>(.*?)</chapter_description>", content, re.DOTALL
+                ).group(1)
+                outline_text += f"{pre_level} {chapter_name}\n"
+                outline_text += f"    {chapter_description}\n"
+        upload_mesage.stream_queue.put(outline_text)
+        return ""
 
     def parse_outline(self, xml_outline):
         """Parse outline from xml
         Args:
             xml (str): xml string
         """
-        pure_outline = re.sub(r"<outline>|</outline>", "", xml_outline).strip()
+        pattern = r'<chapter level="(\d+)">(.*?)</chapter>'
+        chapter_pattern = re.compile(pattern, re.DOTALL)
+        matches = chapter_pattern.findall(xml_outline)
         outline_text = ""
-        level_1_cnt = 0
-        level_2_cnt = 0
-        level_3_cnt = 0
-        while pure_outline.strip():
-            try:
-                level = int(re.search(r'level="(\d+)"', pure_outline).group(1))
-            except:
-                break
-            if level == 1:
-                cur_lever_1_chapters = re.search(r'<chapter level="1">(.*?)</chapter>', pure_outline, re.DOTALL).group(
-                    1
-                )
-                level_1_cnt += 1
-                level_2_cnt = 0
-                outline_text += str(level_1_cnt) + ". " + cur_lever_1_chapters + "\n"
+        level_list = [0, 0, 0]
+        for level, content in matches:
+            level = int(level) - 1
+            level_list[level] += 1
+            pre_level = ".".join([str(i) for i in level_list[: level + 1]]) + "."
+            if level == 0 or level == 1:
+                level_list[level + 1] = 0
+                outline_text += f"{pre_level} {content}\n"
             elif level == 2:
-                cur_lever_2_chapters = re.search(r'<chapter level="2">(.*?)</chapter>', pure_outline, re.DOTALL).group(
-                    1
-                )
-                level_2_cnt += 1
-                level_3_cnt = 0
-                outline_text += str(level_1_cnt) + "." + str(level_2_cnt) + ". " + cur_lever_2_chapters + "\n"
-            elif level == 3:
-                cur_lever_1_chapters_xml = re.search(
-                    r'<chapter level="3">(.*?)</chapter>', pure_outline, re.DOTALL
-                ).group(1)
-                chapter_name = re.search(r"<chapter_name>(.*?)</chapter_name>", cur_lever_1_chapters_xml).group(1)
+                chapter_name = re.search(r"<chapter_name>(.*?)</chapter_name>", content, re.DOTALL).group(1)
                 chapter_description = re.search(
-                    r"<chapter_description>(.*?)</chapter_description>", cur_lever_1_chapters_xml
+                    r"<chapter_description>(.*?)</chapter_description>", content, re.DOTALL
                 ).group(1)
-                level_3_cnt += 1
-                outline_text += (
-                    str(level_1_cnt) + "." + str(level_2_cnt) + "." + str(level_3_cnt) + ". " + chapter_name + "\n"
-                )
-                outline_text += "    " + chapter_description + "\n"
-            pure_outline = re.sub(
-                r'<chapter level="\d+">(.*?)</chapter>', "", pure_outline, flags=re.DOTALL, count=1
-            ).strip()
-        return outline_text
-
-    def parse_content(self, respond):
-        start_tag = "<content>"
-        end_tag = "</content>"
-        if start_tag == -1 and end_tag == -1:
-            return respond
-        return respond.split(start_tag)[1].split(end_tag)[0]
+                outline_text += f"{pre_level} {chapter_name}\n"
+                outline_text += f"    {chapter_description}\n"
+        print(outline_text)
 
 
 def get_action():

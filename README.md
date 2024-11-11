@@ -10,7 +10,7 @@ WiseAgent is a multi-agent framework designed to facilitate continuous learning 
 
 - **Multi-Agent Support**: Easily create and manage multiple agents within a single environment.
 - **Continuous Learning**: Agents can learn and adapt based on new data and experiences.
-- **Scalability**: Designed to scale with your project, from small-scale experiments to large-scale deployments.
+- **Scalconfig**: Designed to scale with your project, from small-scale experiments to large-scale deployments.
 - **Flexible Architecture**: Customize and extend the framework to fit your specific needs.
 
 ## Installation

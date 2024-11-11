@@ -1,17 +1,28 @@
+"""
+Author: Huang Weitao
+Date: 2024-11-03 15:40:54
+LastEditors: Huang Weitao
+LastEditTime: 2024-11-08 16:19:48
+Description: 
+"""
 import base64
 import json
-import os
+import re
 import time
-from dataclasses import dataclass
+import uuid
 
 import extra_streamlit_components as stx
-import replicate
 import requests
 import streamlit as st
+from sseclient import SSEClient
 from streamlit_float import float_init, float_parent
 from streamlit_js_eval import streamlit_js_eval
+from web_data import WebData
 
-from wiseagent.protocol.message import EnvironmentHandleType, Message
+from wiseagent.common.parse_llm_respond import parse_command_xml_data, parse_json_data
+from wiseagent.common.protocol_command import ActionCommand, Command, parse_command
+from wiseagent.common.protocol_message import EnvironmentHandleType, Message
+from wiseagent.config.const import STREAM_END_FLAG
 
 # Set the page configuration
 st.set_page_config(page_title="WiseAgent", layout="wide")
@@ -49,7 +60,6 @@ CODE_TYPE = {
     "clj": "clojure",
     "cljs": "clojurescript",
     "fsx": "f# script",
-    "md": "markdown",
     "html": "html",
     "css": "css",
     "json": "json",
@@ -64,7 +74,6 @@ CODE_TYPE = {
     "toml": "toml",
     "csv": "csv",
     "tsv": "tsv",
-    "md": "markdown",
     "rst": "reStructuredText",
     "tex": "latex",
     "bib": "bibtex",
@@ -73,21 +82,28 @@ CODE_TYPE = {
 }
 
 
-@dataclass
-class WebData:
-    """
-    Data class to hold the current state of the chat environment and agents.
-    The chat environment and chat agent are exclusive; if one is changed, the other will be reset.
-    """
+def get_stream_data(url, params=None, lang=None):
+    messages = SSEClient(url, params=params)
 
-    # Current active chat environment
-    current_chat_enviornment = None
-    environment_list = ["MultiAgentEnvironment"]
-    # Current active chat agent. cur
-    current_chat_agent = None
-    agent_list = []  # [{"name":agent_name,"active":0/1}]
-    # The agents file that has been loaded
-    agent_yaml_file = []
+    # 创建 SSEClient 对象
+    def stream_messages():
+        # 遍历每个事件
+        if lang is not None:
+            yield f"```{lang}\n"
+        for msg in messages:
+            if msg.data == STREAM_END_FLAG:
+                break
+            msg.data = msg.data.replace("<new_line>", "\n")
+            if len(msg.data) > 30:
+                yield msg.data[1:-1]
+            else:
+                for ch in msg.data[1:-1]:
+                    yield ch
+                    time.sleep(0.01)
+        if lang is not None:
+            yield "\n```"
+
+    return stream_messages
 
 
 # Initialize session state variables
@@ -99,6 +115,9 @@ if "chat_messages" not in st.session_state:
 
 if "polling" not in st.session_state:
     st.session_state.polling = False
+
+if "fresh_workspace" not in st.session_state:
+    st.session_state.fresh_workspace = 0
 
 
 def get_web_data() -> WebData:
@@ -165,7 +184,6 @@ def display_sidebar_ui():
             file_content = uploaded_file.read()
             if uploaded_file.type == "application/octet-stream":
                 yaml_string = file_content.decode("utf-8")
-
                 # Send the YAML string to the server to add the new agent
                 try:
                     response = requests.post("http://localhost:5000/add_agent", params={"yaml_string": yaml_string})
@@ -237,7 +255,8 @@ def change_chat_window(switch_button_type, enviornment_name):
 def chat_box(web_data, window_height):
     """Initialize the chat box"""
     st.subheader("ChatBox")
-    with st.container(height=window_height - 330, border=True):
+    container = st.container(height=window_height - 330, border=True)
+    with container:
         # Display chat messages
         for message in st.session_state.chat_messages:
             with st.chat_message(message["role"]):
@@ -245,33 +264,31 @@ def chat_box(web_data, window_height):
                 st.write(response)
     # Reset chat button if chat is aborted
     if prompt := st.chat_input():
-        # Chat input for user to send messages
-        try:
-            target_agent_name = prompt.split(" ")[0].split("@")[1]
-            content = " ".join(prompt.split(" ")[1:])
-        except:
-            target_agent_name = ""
-            content = ""
-        if target_agent_name in [agent["name"] for agent in web_data.agent_list]:
+        match = re.match(r"@\s*([\w-]+)\s*(.*)", prompt)
+        target_agent_name, content = match.groups() if match else ("", "")
+        if all(target_agent_name != agent["name"] for agent in web_data.agent_list):
+            st.toast(f"Agent {target_agent_name} not found.Please input the format '@agent_name message'")
+        else:
             try:
+                container.chat_message("user").write(content)
                 response = requests.post(
                     "http://localhost:5000/post_message",
                     params={"target_agent_name": target_agent_name, "content": content},
                 )
                 if response.status_code == 200:
                     st.session_state.chat_messages.append({"role": "user", "content": content})
-                    st.rerun()
+                    st.session_state.polling = True
                 else:
-                    st.toast(f"Agent {target_agent_name} not found")
+                    st.toast(f"Message not sent. Error code: {response.status_code}")
             except Exception as e:
                 st.toast(f"Error posting message: {e}")
-        else:
-            st.toast(f"Agent {target_agent_name} not found.Please input the format '@agent_name message'")
     float_parent()
 
 
 def workspace_box(web_data, window_height):
     """Initialize the workspace box"""
+    if st.session_state.fresh_workspace:
+        print("fresh workspace")
     tab_bar_data = []
     for agent_name in [agent["name"] for agent in web_data.agent_list]:
         tab_bar_data.append(stx.TabBarItemData(id=agent_name, title=agent_name, description="Tasks to take care of"))
@@ -286,24 +303,25 @@ def workspace_box(web_data, window_height):
     )
 
     with st.container(height=window_height - 330):
+        workspace_tabs_name = []
         if chosen_agent_name in st.session_state.agent_workspace_map:
             workspace_tabs_name = list(st.session_state.agent_workspace_map[chosen_agent_name].keys())
             if "file_upload" in workspace_tabs_name:
                 workspace_tabs_name.extend(["preview markdown file"])
 
-            if len(workspace_tabs_name) != 0:
-                workspace_name = st.selectbox(
-                    "select observation",
-                    workspace_tabs_name,
-                )
+            def select_box_on_chage():
+                # This will cause a rerun
+                pass
 
-                if workspace_name == "file_upload":
-                    for index, message in enumerate(
-                        st.session_state.agent_workspace_map[chosen_agent_name][workspace_name]
-                    ):
-                        base64_data = message["file_content"]
+            workspace_name = st.selectbox("select observation", workspace_tabs_name, on_change=select_box_on_chage)
+            # =================file_upload===================
+            if workspace_name == "file_upload":
+                for index, message in enumerate(
+                    st.session_state.agent_workspace_map[chosen_agent_name][workspace_name]
+                ):
+                    if base64_data := message["file_content"]:
+                        # 二进制数据
                         _bytes = base64.b64decode(base64_data.encode(encoding="utf-8"))
-                        print(f"{index}.{message}")
                         st.download_button(
                             label=f"Download {message['file_name']} file",
                             file_name=message["file_name"],
@@ -311,29 +329,111 @@ def workspace_box(web_data, window_height):
                             use_container_width=True,
                             key=message["file_name"] + str(index),
                         )
-                elif workspace_name == "preview markdown file":
-                    file_list = [
-                        file
-                        for file in st.session_state.agent_workspace_map[chosen_agent_name]["file_upload"]
-                        if file["file_name"].split(".")[-1]
-                        in ["html", "md", "txt", "py", "json", "css", "js", "xml", "vue"]
-                    ]
-                    file_name_list = [file["file_name"] for file in file_list]
-                    file_name = st.selectbox("Select a file to preview", file_name_list, key="file_name")
-                    if file_name:
-                        if base64_data := next(
-                            (
-                                file["file_content"]
-                                for file in st.session_state.agent_workspace_map[chosen_agent_name]["file_upload"]
-                                if file["file_name"] == file_name
-                            ),
-                            None,
-                        ):
-                            _bytes = base64.b64decode(base64_data.encode(encoding="utf-8"))
-                            content = _bytes.decode(encoding="utf-8")
-                            st.markdown(f"```{CODE_TYPE.get(file_name.split('.')[-1], '')}\n" + content + "\n```")
-                else:
-                    st.write(st.session_state.agent_workspace_map[chosen_agent_name][workspace_name])
+                    elif (content := message["content"]) and message["is_stream"] is False:
+                        # 文本数据
+                        st.download_button(
+                            label=f"Download {message['file_name']} file",
+                            file_name=message["file_name"],
+                            data=content.encode(encoding="utf-8"),
+                            use_container_width=True,
+                            key=message["file_name"] + str(index),
+                        )
+                    elif message["is_stream"] is True:
+                        with st.spinner("Generating file..."):
+                            upload_size = st.empty()
+                            message_content = ""
+                            file_name = message["file_name"]
+                            data_iter = get_stream_data(
+                                url="http://localhost:5000/get_stream_message",
+                                params={"message_id": message["message_id"]},
+                                lang=CODE_TYPE.get(file_name.split(".")[-1], None),
+                            )
+
+                            for data in data_iter():
+                                message_content += data
+                                upload_size.text(f"Generating file... {len(message_content)}")
+                            message["is_stream"] = False
+                            upload_size.empty()
+                            st.download_button(
+                                label=f"Download {message['file_name']} file",
+                                file_name=message["file_name"],
+                                data=message_content.encode(encoding="utf-8"),
+                                use_container_width=True,
+                                key=message["file_name"] + str(index),
+                            )
+                            for data in data_iter:
+                                message_content += data
+                                upload_size.text(f"Generating file... {len(message_content)}")
+            elif workspace_name == "preview markdown file":
+                file_list = [
+                    file
+                    for file in st.session_state.agent_workspace_map[chosen_agent_name]["file_upload"]
+                    if file["file_name"].split(".")[-1]
+                    in ["html", "md", "txt", "py", "json", "css", "js", "xml", "vue"]
+                ]
+                file_name_list = [file["file_name"] for file in file_list]
+                file_name = st.selectbox("Select a file to preview", file_name_list, key="file_name")
+                if file_name:
+                    file_message = next(filter(lambda file: file["file_name"] == file_name, file_list), None)
+                    print("file_message['content']", file_message["content"])
+                    if file_message["file_content"]:
+                        print("in here")
+                        base64_data = file_message["file_content"]
+                        _bytes = base64.b64decode(base64_data.encode(encoding="utf-8"))
+                        content = _bytes.decode(encoding="utf-8")
+                        st.markdown(f"```{CODE_TYPE.get(file_name.split('.')[-1], '')}\n" + content + "\n```")
+                    elif file_message["is_stream"]:
+                        data_iter = get_stream_data(
+                            url="http://localhost:5000/get_stream_message",
+                            params={"message_id": file_message["message_id"]},
+                            lang=CODE_TYPE.get(file_name.split(".")[-1], None),
+                        )
+                        message_content = st.write_stream(data_iter)
+                        file_message["content"] = message_content
+                        file_message["is_stream"] = False
+                    elif file_message["content"]:
+                        st.markdown(file_message["content"])
+            elif workspace_name == "thought":
+                command_index = 0
+                for message in st.session_state.agent_workspace_map[chosen_agent_name][workspace_name]:
+                    if message.get("is_stream", None):
+                        # request for content
+                        response = requests.get(
+                            "http://localhost:5000/get_message",
+                            params={"position": st.session_state.current_message_id},
+                        )
+                        st.write_stream(response.json().get("content", ""))
+                    else:
+                        content = message.get("content", "")
+                        command_list = None
+                        try:
+                            if "xml" in content:
+                                command_list, error = parse_command_xml_data(content)
+                            elif "json" in content:
+                                command_list, error = parse_json_data(content)
+                            print("command_list:\n", command_list)
+                            command_list = parse_command(command_list)
+                            command: ActionCommand
+                            for command in command_list:
+                                with st.expander(label=f"Command {command_index+1}", expanded=True):
+                                    st.write(f"Action: {command.action_name}.{command.action_method}")
+                                    st.json(command.args)
+                                command_index += 1
+                        except Exception as e:
+                            print(e)
+                            st.write("Error parsing command:\n" + content)
+            else:
+                for message in st.session_state.agent_workspace_map[chosen_agent_name][workspace_name]:
+                    if message.get("is_stream", None):
+                        # request for content
+                        response = requests.get(
+                            "http://localhost:5000/get_message",
+                            params={"position": st.session_state.current_message_id},
+                        )
+
+                        st.write_stream(response.json().get("content", ""))
+                    else:
+                        st.write(message.get("content", ""))
     # float_parent()
 
 
@@ -366,19 +466,6 @@ def main_windows():
         workspace_box(web_data=web_data, window_height=window_height)
 
 
-def abort_chat(error_message: str):
-    """Display an error message requiring the chat to be cleared.
-    Forces a rerun of the app."""
-    assert error_message, "Error message must be provided."
-    error_message = f":red[{error_message}]"
-    if st.session_state.chat_messages[-1]["role"] != "assistant":
-        st.session_state.chat_messages.append({"role": "assistant", "content": error_message})
-    else:
-        st.session_state.chat_messages[-1]["content"] = error_message
-    st.session_state.chat_aborted = True
-    st.rerun()
-
-
 main()
 
 
@@ -393,7 +480,7 @@ def handle_message(message: Message):
             st.session_state.agent_workspace_map[_agent_name] = {}
         if env_handle_type not in st.session_state.agent_workspace_map[_agent_name]:
             st.session_state.agent_workspace_map[_agent_name][env_handle_type] = []
-        st.session_state.agent_workspace_map[_agent_name][env_handle_type].insert(0, message)
+        st.session_state.agent_workspace_map[_agent_name][env_handle_type].append(message)
 
     if message["env_handle_type"] in [
         EnvironmentHandleType.COMMAND,
@@ -403,34 +490,22 @@ def handle_message(message: Message):
         EnvironmentHandleType.FILE_UPLOAD,
     ]:
         add_to_workspace(agent_name, message["env_handle_type"], message)
-    elif message["env_handle_type"] == EnvironmentHandleType.COMUNICATION:
+    elif message["env_handle_type"] == EnvironmentHandleType.COMMUNICATION:
         st.session_state.chat_messages.append(
             {"role": message["send_from"], "content": message["send_to"] + message["content"]}
         )
-        print("handle communcate")
-    elif message["env_handle_type"] == EnvironmentHandleType.SLEEP:
+    elif message["env_handle_type"] in [EnvironmentHandleType.WAKEUP, EnvironmentHandleType.SLEEP]:
         agent_name = message["send_from"]
-        active_agent_number = 0
-        for agent in get_web_data().agent_list:
-            if agent["name"] == agent_name:
-                agent["active"] = 0
-            if agent["active"] != 0:
-                active_agent_number += 1
-        if active_agent_number == 0:
-            st.session_state.polling = False
-
-    elif message["env_handle_type"] == EnvironmentHandleType.WAKEUP:
-        agent_name = message["send_from"]
-        for agent in get_web_data().agent_list:
-            if agent["name"] == agent_name:
-                agent["active"] = 1
-        st.session_state.polling = True
+        agents = get_web_data().agent_list
+        target_agent = next((agent for agent in agents if agent["name"] == agent_name), None)
+        if target_agent:
+            target_agent["active"] = 0 if message["env_handle_type"] == EnvironmentHandleType.SLEEP else 1
+        st.session_state.polling = any(agent["active"] != 0 for agent in agents)
     else:
         print("handel error")
 
 
 def fetch_message_from_backend():
-    # try:
     response = requests.get(
         "http://localhost:5000/get_message", params={"position": st.session_state.current_message_id}
     )
@@ -440,27 +515,30 @@ def fetch_message_from_backend():
         next_position_tag = data["next_position_tag"]
         if message_list:
             message_list = json.loads(message_list)
+            for index, message in enumerate(message_list):
+                print("index", index, message["MessageClass"])
             for message in message_list:
                 handle_message(message)
             st.session_state.current_message_id = next_position_tag
-            st.rerun()
+            st.session_state.fresh_workspace = uuid.uuid4().hex
+            return True
         else:
             return False
     else:
         st.error("Failed to get message from the backend.")
 
 
-# except Exception as e:
-#     st.error(f"An error occurred while fetching message from the backend: {str(e)}")
-
-
 def start_polling():
     """Start polling the backend for new messages"""
     while True:
         has_new_message = fetch_message_from_backend()
-        if not has_new_message:
+        print("has_new_message", has_new_message)
+        if has_new_message:
+            st.rerun()
+        else:
             time.sleep(3)
 
 
 if st.session_state.polling:
+    st.toast("Start polling")
     start_polling()

@@ -7,21 +7,19 @@ Description:
 """
 from typing import List
 
-# from wiseagent.action.memory_action.base_memory_action import BaseMemoryAction
-from wiseagent.action.memory_action.base_memory_action import BaseMemoryAction
-from wiseagent.agent_data.base_agent_data import AgentData
-from wiseagent.common.annotation import singleton
-from wiseagent.protocol.action_command import ActionCommand
+from wiseagent.action.base_action import BaseAction
+from wiseagent.common.protocol_command import ActionCommand
+from wiseagent.common.singleton import singleton
+from wiseagent.core.agent import Agent
 
 
 @singleton
-class KnowledgeMemoryAction(BaseMemoryAction):
-    action_type: str = "MemoryAtion"
+class KnowledgeMemoryAction(BaseAction):
     action_description: str = "Actions to manage knowledge memory"
 
     # TODO:Some of this methods can be implemented in BaseAction
 
-    def init_agent(self, agent_data: AgentData):
+    def init_agent(self, agent_data: Agent):
         pass
 
     def check_start(self, command_list: List[ActionCommand] = None):  # type: ignore
@@ -44,7 +42,3 @@ class KnowledgeMemoryAction(BaseMemoryAction):
 
     def add_memory(self, memory):
         pass
-
-
-def get_action():
-    return KnowledgeMemoryAction()

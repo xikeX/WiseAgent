@@ -12,19 +12,18 @@ from pathlib import Path
 from typing import Any, Dict, List
 from urllib.parse import urlencode
 
-import pandas as pd
 from bs4 import BeautifulSoup
 from matplotlib import pyplot as plt
 from playwright.sync_api import sync_playwright
 from tqdm import tqdm
 
 from wiseagent.action.action_annotation import action
-from wiseagent.action.base import BaseAction, BaseActionData
-from wiseagent.agent_data.base_agent_data import AgentData, get_current_agent_data
-from wiseagent.common.annotation import singleton
-from wiseagent.common.file_io import repair_path, write_excel, write_file
+from wiseagent.action.base_action import BaseAction, BaseActionData
+from wiseagent.common.protocol_message import BaseActionMessage, FileUploadMessage
+from wiseagent.common.singleton import singleton
+from wiseagent.common.utils import repair_path, write_excel, write_file
+from wiseagent.core.agent import Agent, get_current_agent_data
 from wiseagent.core.agent_core import get_agent_core
-from wiseagent.protocol.message import BaseActionMessage, FileUploadMessage
 
 BASE_CLASS = "\n".join(
     [
@@ -101,12 +100,11 @@ class arxivActionData(BaseActionData):
 
 @singleton
 class ArxivAction(BaseAction):
-    action_name: str = "arxivAction"
     action_description: str = (
         "Get the arxiv information to help summary the current research eare and get the next research direction."
     )
 
-    def init_agent(self, agent_data: AgentData):
+    def init_agent(self, agent_data: Agent):
         agent_data.set_action_data(self.action_name, arxivActionData())
 
     ## class action -----------------------------------
@@ -233,19 +231,16 @@ class ArxivAction(BaseAction):
     # class tools for this action --------------------------------------------------
 
     def anaylze_data(self, html: str):
-        # 解析 HTML
         soup = BeautifulSoup(html, "html.parser")
-
-        # 提取标题
         title_list = soup.find_all("p", class_="title is-5 mathjax")
         title_list = [t.get_text(strip=True) for t in title_list]
 
-        # 提取作者
+        # prase authors
         authors_list = []
         for authors_container in soup.find_all("p", class_="authors"):
             authors_list.append("|".join([a.get_text() for a in authors_container.find_all("a")]))
 
-        # 提取全部摘要
+        # prase abstract
         abstract_full_list = soup.find_all("span", class_="abstract-full has-text-grey-dark mathjax")
         abstract_full_list = [abstract.get_text(strip=True) for abstract in abstract_full_list]
 
@@ -305,7 +300,7 @@ class ArxivAction(BaseAction):
         # 生成完整的 URL
         return base_url + urlencode(params, doseq=True)
 
-    def get_arxiv_browser_page(self, agent_data: AgentData):
+    def get_arxiv_browser_page(self, agent_data: Agent):
         """Get arxiv browser from the action data."""
         arxiv_action_data = agent_data.get_action_data(self.action_name)
         if arxiv_action_data.arxiv_browser is None:
@@ -348,17 +343,9 @@ class ArxivAction(BaseAction):
             save_folder (str): The folder where the data is saved
         """
         save_folder = repair_path(save_folder)
-        agent_data: AgentData = get_current_agent_data()
+        agent_data: Agent = get_current_agent_data()
         arxiv_action_data = agent_data.get_action_data(self.action_name)
         cur_arxiv_data = arxiv_action_data.cur_arxiv_data
-        # Make statistics of the current data
-        # The cir_arxiv_data is a list of dictionaries
-        # Each dictionary contains the following keys:
-        # - title: the title of the paper
-        # - abstract: the abstract of the paper
-        # - label: the label of the paper
-        # - abstract_translated: the translated abstract of the paper
-        # Make a statistic of the label
         label_statistic = {}
         for item in cur_arxiv_data:
             label = item["label"]
@@ -371,7 +358,3 @@ class ArxivAction(BaseAction):
         plt.ylabel("Count")
         plt.title(f"Classification Statistics form {arxiv_action_data.start_date} to {arxiv_action_data.end_date}")
         plt.savefig(save_folder / "classification_statistics.png")
-
-
-def get_action():
-    return ArxivAction()

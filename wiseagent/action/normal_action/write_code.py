@@ -2,46 +2,56 @@
 Author: Huang Weitao
 Date: 2024-10-10 22:22:37
 LastEditors: Huang Weitao
-LastEditTime: 2024-10-11 00:34:38
+LastEditTime: 2024-11-05 10:33:19
 Description: 
 """
+import itertools
 import queue
+import re
 import webbrowser
 from functools import partial
+from typing import List
 
 from wiseagent.action.action_annotation import action
-from wiseagent.action.base import BaseAction
-from wiseagent.agent_data.base_agent_data import AgentData, get_current_agent_data
-from wiseagent.common.annotation import singleton
-from wiseagent.common.file_io import read_rb, repair_path, write_file
-from wiseagent.config.const import STREAM_END_FLAG
-from wiseagent.core.agent_core import get_agent_core
-from wiseagent.protocol.message import AIMessage, FileUploadMessage, Message
+from wiseagent.action.base_action import BaseAction
+from wiseagent.common.protocol_message import (
+    STREAM_END_FLAG,
+    AIMessage,
+    FileUploadMessage,
+)
+from wiseagent.common.singleton import singleton
+from wiseagent.common.utils import repair_path, write_file
+from wiseagent.core.agent import Agent, get_current_agent_data
 
-WRITE_CODE_PROMPT_TEMPLATE = """
+FILE_NAME_START_TAG = "<file_name>"
+FILE_NAME_END_TAG = "</file_name>"
+CODE_START_TAG = "<code>"
+CODE_END_TAG = "</code>"
+
+WRITE_CODE_PROMPT_TEMPLATE = f"""
 Your are and Engineer, you need to write some code according to the file description.
 
 ## File List
-{file_list}
+{{file_list}}
 
 ## File Description
-{file_description}
+{{file_description}}
 
 ## Instruction
 Implement the each of the code file according to the file_description. Ensure the code is compete, correct and bug free. Do Not leave any TODOs or comments in the code.
 Do not leave "```" in front of the code block.
 ## Output Format
-<file_name>
+{FILE_NAME_START_TAG}
 the content of the file name 1
-</file_name>
-<code>
+{FILE_NAME_END_TAG}
+{CODE_START_TAG}
 the code of the file name 1
-</code>
+{CODE_END_TAG}
 
-<file_name>
+{FILE_NAME_START_TAG}
 the content of the file name 2
-</file_name>
-<code>
+{FILE_NAME_END_TAG}
+{CODE_START_TAG}
 ...
 
 Ouput:
@@ -52,10 +62,9 @@ Ouput:
 class WriteCodeAction(BaseAction):
     """This is ActionCass to do wechat action, all the action will be play in Wechat Application"""
 
-    action_name: str = "WriteCodeAction"
     action_description: str = " this class is to do wechat action."
 
-    def init_agent(self, agent_data: AgentData):
+    def init_agent(self, agent_data: Agent):
         """This Action Does not need to add structure"""
 
     @action()
@@ -79,105 +88,96 @@ class WriteCodeAction(BaseAction):
             )
         """
         output = ""
-        agent_data = get_current_agent_data()
-        memory = agent_data.get_last_memory()
-        while file_list:
-            current_file_list = file_list[:5]
+        temp_memory = get_current_agent_data().get_latest_memory()
+        for current_file_list in [file_list[i : i + 5] for i in range(0, len(file_list), 5)]:
+            """Write code for each five files"""
             write_code_prompt = WRITE_CODE_PROMPT_TEMPLATE.format(
                 file_list="\n".join(current_file_list), file_description=file_description
             )
-            stream_message = FileUploadMessage(is_stream=True, stream_queue=queue.Queue())
-            stream_message.send_message()
+            # the will be multi file generate in one respond, so need to report a list of FileUpload Message
+            cache = {}
             respond = self.llm_ask(
                 write_code_prompt,
-                memory=memory,
-                system_prompt=[],
-                handle_stream_function=partial(self.handle_write_code_stream, message=stream_message),
+                memory=temp_memory,
+                handle_stream_function=partial(self.handle_write_code_stream, cache=cache),
             )
             current_file_list, code = self.parse_write_code_respond(respond)
-            memory.append(AIMessage(coontent=respond))
+            temp_memory.append(AIMessage(coontent=respond))
             output += "\n\n".join(
                 [f"{file_name} complete.\ncontent:\n{code}" for file_name, code in zip(current_file_list, code)]
             )
-            file_list = file_list[5:]
         return output + "All files are complete."
 
-    def handle_write_code_stream(self, rsp_message: str, message: Message):
-        """Prase the stream message and return the file name and file content
-        the format is like this:
-        <file_name>
-        </file_name>
-        <code>
-        </code>
+    def handle_write_code_stream(self, rsp_message: str, cache: dict):
         """
-        if rsp_message == STREAM_END_FLAG:
-            message.stream_queue.put(STREAM_END_FLAG)
-        if "file_name" not in message.appendix:
-            message.appendix["file_name"] = ""
-        if "receive_content" not in message.appendix:
-            message.appendix["receive_content"] = False
-        # wait for the file_name
-        if message.appendix["file_name"] == "":
-            if "<file_name>" in rsp_message and "</file_name>" in rsp_message:
-                start_index = rsp_message.index("<file_name>") + len("<file_name>")
-                end_index = rsp_message.index("</file_name>")
-                file_name = rsp_message.split("<file_name>")[1].split("</file_name>")[0].strip()
-                file_name = repair_path(file_name)
-                message.appendix["file_name"] = str(file_name)
-                return rsp_message[end_index + len("</file_name>") :]
-            else:
-                # wait for the file_name
-                return rsp_message
-        # NOTE: message.appendix["file_name"] != ""
-        if message.appendix["receive_content"] == False:
-            if "<code>" in rsp_message:
-                start_index = rsp_message.index("<code>") + len("<code>")
-                message.appendix["receive_content"] = True
-                return rsp_message[start_index:]
-        # NOTE: message.appendix["receive_content"] == True
-        if "<" in rsp_message:
-            # check if the tag is </file_content>
-            if not rsp_message.startswith("<"):
-                end_tag = rsp_message.find("<")
-                message.stream_queue.put(rsp_message[:end_tag])
-                return rsp_message[end_tag:]
-            if ">" in rsp_message:
-                end_index = rsp_message.find(">")
-                tag_name = rsp_message[: end_index + 1]
-                if tag_name == "</code>":
-                    message.appendix["receive_content"] = False
-                    message.appendix["file_name"] = ""
-                    return rsp_message[end_index + 1 :]
-                else:
-                    message.stream_queue.put(rsp_message[: end_index + 1])
-                    return rsp_message[end_index + 1 :]
-            if len(rsp_message) > len("</code>"):
-                message.stream_queue.put(rsp_message)
+        Prase the stream message and return the file name and file content
+        Agrs:
+            rsp_message (str): the stream message from LLM, the rsp_message will only add one char per round.
+            upload_message (FileUploadMessage): the upload message to upload the file
+        """
+        if not isinstance(cache, dict):
+            raise Exception("cache is not initialized, please use {} to init cache")
+        if "file_number" not in cache:
+            cache["file_number"] = ""
+        if "message_list" not in cache:
+            cache["message_list"] = []
+        if "message_index" not in cache:
+            cache["message_index"] = -1
+        if "start_receive_code" not in cache:
+            cache["start_receive_code"] = False
+        if "start_receive_file_name" not in cache:
+            cache["start_receive_file_name"] = False
+            cache["file_name"] = ""
+        if STREAM_END_FLAG in rsp_message:
+            try:
+                cache["message_list"][cache["message_index"]].stream_queue.put(STREAM_END_FLAG)
+            except Exception as e:
+                pass
+        special_tag = [FILE_NAME_START_TAG, FILE_NAME_END_TAG, CODE_START_TAG, CODE_END_TAG]
+        if any(tag.startswith(rsp_message) for tag in special_tag):
+            # Step One, wait for receiver file_name
+            if FILE_NAME_END_TAG in rsp_message:
+                file_name = repair_path(cache["file_name"].strip())
+                cache["message_list"].append(
+                    FileUploadMessage(
+                        file_name=str(file_name), is_stream=True, stream_queue=queue.Queue()
+                    ).send_message()
+                )
+                cache["message_index"] = cache["message_index"] + 1
+                cache["file_name"] = ""
+                cache["start_receive_file_name"] = False
+                return ""
+            # Step Two, start to receive code
+            elif FILE_NAME_START_TAG == rsp_message:
+                cache["start_receive_file_name"] = True
+                return ""
+            elif CODE_START_TAG == rsp_message:
+                cache["start_receive_code"] = True
+                return ""
+            # Step Three, stop to receive code
+            elif CODE_END_TAG in rsp_message:
+                cache["start_receive_code"] = False
+                message_index = cache["message_index"]
+                cache["message_list"][message_index].stream_queue.put(STREAM_END_FLAG)
                 return ""
             return rsp_message
         else:
-            message.stream_queue.put(rsp_message)
+            # Receive code
+            if cache["start_receive_code"]:
+                message_index = cache["message_index"]
+                cache["message_list"][message_index].stream_queue.put(rsp_message)
+            # Receive file name
+            if cache["start_receive_file_name"]:
+                cache["file_name"] += rsp_message
             return ""
 
     def parse_write_code_respond(self, rsp):
-        def get_tag_content(tag_name, rsp):
-            start_tag = f"<{tag_name}>"
-            end_tag = f"</{tag_name}>"
-            start_index = rsp.find(start_tag)
-            end_index = rsp.find(end_tag)
-            if start_index == -1 or end_index == -1:
-                return None, rsp
-            remaind_rsp = rsp[end_index + len(end_tag) :]
-            return rsp[start_index + len(start_tag) : end_index].strip(), remaind_rsp
-
-        file_list = []
-        code_list = []
-        while rsp:
-            file_name, rsp = get_tag_content("file_name", rsp)
-            code, rsp = get_tag_content("code", rsp)
-            if not (file_name and code):
-                break
-
+        """Parse the respond from LLM and return the file name and file content"""
+        file_list, code_list = [], []
+        pattern = rf"{FILE_NAME_START_TAG}\s*(.*?)\s*{FILE_NAME_END_TAG}\s*{CODE_START_TAG}\s*(.*?)\s*{CODE_END_TAG}"
+        write_code_pattern = re.compile(pattern, re.DOTALL)
+        match = write_code_pattern.findall(rsp)
+        for file_name, code in match:
             write_file(file_name, code)
             FileUploadMessage(file_name=file_name).send_message()
             file_list.append(file_name)
@@ -186,7 +186,7 @@ class WriteCodeAction(BaseAction):
 
     @action()
     def open_html(self, html_file_path):
-        """Open the html file in the browser.
+        """Open the native html project in the browser.
         Args:
             html_file_path (str): the path of the html file
 
@@ -195,7 +195,6 @@ class WriteCodeAction(BaseAction):
         """
         html_file_path = repair_path(html_file_path)
         webbrowser.open(html_file_path)
-
         return f" {html_file_path} has been opened in the browser."
 
 

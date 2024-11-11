@@ -11,9 +11,9 @@ from typing import Any
 from wxauto import WeChat
 
 from wiseagent.action.action_annotation import action
-from wiseagent.action.base import BaseAction, BaseActionData
-from wiseagent.agent_data.base_agent_data import AgentData, get_current_agent_data
-from wiseagent.common.annotation import singleton
+from wiseagent.action.base_action import BaseAction, BaseActionData
+from wiseagent.common.singleton import singleton
+from wiseagent.core.agent import Agent, get_current_agent_data
 
 wechat = None
 
@@ -26,10 +26,9 @@ class WeChatActionData(BaseActionData):
 class WeChatAction(BaseAction):
     """This is ActionCass to do wechat action, all the action will be play in Wechat Application"""
 
-    action_name: str = "WeChatAction"
     action_description: str = " this class is to do wechat action."
 
-    def init_agent(self, agent_data: AgentData):
+    def init_agent(self, agent_data: Agent):
         agent_data.set_action_data(self.action_name, WeChatActionData())
         global wechat
         # will init the wechat in main thread
@@ -42,18 +41,6 @@ class WeChatAction(BaseAction):
         if wechat_action_data.wechat_handle is None:
             wechat_action_data.wechat_handle = wechat
         return wechat_action_data.wechat_handle
-
-    # NOTE: get_wachat_friend_list is not necessary.
-    # @action()
-    # def get_wachat_friend_list(self):
-    #     """get the friend list in wechat"""
-    #
-    #     wechat:WeChat = self.get_wechat_handle()
-    #     friend_list = wechat.GetAllFriends()
-    #     friend_desciption = ""
-    #     for index,friend in enumerate(friend_list):
-    #         friend_desciption += f"{index+1} friend name: \"{friend['nickname']}\" remark:\" {friend['remark']}\"\n"
-    #     return friend_desciption
 
     @action()
     def get_chat_history(self, friend_name: str):

@@ -68,3 +68,9 @@ log/
 
 # agent workspace
 workspace/
+db/
+
+# wiseagent personal config
+config/env.yaml
+
+tests/

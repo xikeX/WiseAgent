@@ -1,6 +1,4 @@
-import base64
 from queue import Empty
-from uuid import uuid4
 
 import nbformat as nbf
 from jupyter_client import KernelManager

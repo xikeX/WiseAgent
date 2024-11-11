@@ -4,17 +4,46 @@ Date: 2024-09-21 12:59:01
 LastEditors: Huang Weitao
 LastEditTime: 2024-09-21 19:18:52
 Description: ActionMethod Annotation. This will include the action name and the action type.
-NOTE:
-    The action annotation must be:
-    @action()
-    If developer want to use in this way:
-    @action
-    It will cause the error.
 """
 
 import functools
+import inspect
+from collections import defaultdict
 
-from wiseagent.agent_data.base_agent_data import get_current_agent_data
+from wiseagent.core.agent import get_current_agent_data
+
+
+def get_dict_description(action) -> dict:
+    """
+    Get the description of the action class.
+    Args:
+        action (Action): The action class.
+    Returns:
+        dict: The description of the action class.
+    """
+    result = {
+        "class_name": action.__name__,
+        "class_description": action.__doc__ or "",
+        "class_methods": defaultdict(dict),
+    }
+    for name, method in inspect.getmembers(action, predicate=inspect.isfunction):
+        if not hasattr(method, "action"):
+            continue
+        # Method name
+        method_info = {"method_description": method.__doc__ or ""}
+        result["class_methods"][name] = {}
+        # Method parameters and their types (if available)
+        for param in inspect.signature(method).parameters.values():
+            if param.name == "self":
+                continue
+            param_info = {"param_name": param.name}
+            if param.annotation != inspect.Parameter.empty:
+                param_info["param_type"] = param.annotation.__name__
+            method_info.setdefault("params", []).append(param_info)
+        result["class_methods"][name] = method_info
+    if not result["class_methods"]:
+        return {}
+    return result
 
 
 def action(use_knowledge=False):
@@ -32,7 +61,7 @@ def action(use_knowledge=False):
                 current_agent_data.set_action()
             return result
 
-        # 将自定义属性添加到 wrapper 上
+        # set the action to True. This wil be used to check if the function is an action.
         wrapper.action = True
 
         return wrapper

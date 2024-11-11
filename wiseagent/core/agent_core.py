@@ -1,12 +1,5 @@
 """
 Author: Huang Weitao
-Date: 2024-09-21 02:48:15
-LastEditors: Huang Weitao
-LastEditTime: 2024-10-06 13:33:03
-Description: 
-"""
-"""
-Author: Huang Weitao
 Date: 2024-09-17 14:22:59
 LastEditors: Huang Weitao
 LastEditTime:  2024-09-22 11:31:59
@@ -19,8 +12,9 @@ from typing import Any, List
 
 from pydantic import BaseModel, Field
 
-from wiseagent.common.annotation import singleton
-from wiseagent.config import GLOBAL_CONFIG
+from wiseagent.common.logs import logger
+from wiseagent.common.singleton import singleton
+from wiseagent.config.global_config import GlobalConfig
 
 
 @singleton
@@ -45,55 +39,89 @@ class AgentCore(BaseModel):
     _close_function_list: List[Any] = []
     # When close the system, set the is_running to False, and the sub thread of the system will close.
     _is_running: bool = True
+    global_config: Any = None
 
     @property
     def is_running(self):
         return self._is_running
 
+    def __init__(self, config_file=None, global_config=None, **kwargs):
+        super().__init__(**kwargs)
+        if global_config is not None:
+            self.global_config = global_config
+        elif config_file is not None:
+            from wiseagent.config.global_config import GlobalConfig
+
+            self.global_config = GlobalConfig.from_yaml_file(config_file=config_file)
+        else:
+            from wiseagent.config.global_config import GlobalConfig
+
+            self.global_config = GlobalConfig.default()
+
     def close(self):
         self._is_running = False
         self._have_been_init = False
 
-    def init(self):
+    def init(self, global_config: GlobalConfig = None):
         """
         Init the agent system
         We Do not use the __init__ function, because it will be called in the sub module, and it will cause a circular import.
         """
         if self._have_been_init:
             return
-
-        self._init_receiver()
-        self._init_monitor()
-        self._init_life_manager()
-        self._init_action_manager()
-        self._init_llm_manager()
+        global_config = global_config or self.global_config
+        self._init_receiver(global_config)
+        self._init_monitor(global_config)
+        self._init_life_manager(global_config)
+        self._init_action_manager(global_config)
+        self._init_llm_manager(global_config)
         self._preparetion()
         self._have_been_init = True
 
-    def _init_receiver(self):
-        if GLOBAL_CONFIG.base_receiver_module_path is not None:
-            receiver_module = importlib.import_module(GLOBAL_CONFIG.base_receiver_module_path)
-            receiver_module.register(self)
+    def _init_receiver(self, global_config):
+        from wiseagent.core.base_receiver import BaseReceiver
 
-    def _init_monitor(self):
-        if GLOBAL_CONFIG.base_monitor_module_path is not None:
-            receiver_module = importlib.import_module(GLOBAL_CONFIG.base_monitor_module_path)
-            receiver_module.register(self)
+        self.receiver = BaseReceiver(global_config)
+        self._prepare_function_list.append(self.receiver.run_receive_thread)
+        self._close_function_list.append(self.receiver.close)
 
-    def _init_life_manager(self):
-        if GLOBAL_CONFIG.life_manager_module_path is not None:
-            life_scheduler_module = importlib.import_module(GLOBAL_CONFIG.life_manager_module_path)
-            life_scheduler_module.register(self)
+    def _init_monitor(self, global_config):
+        from wiseagent.core.base_monitor import BaseMonitor
 
-    def _init_action_manager(self):
-        if GLOBAL_CONFIG.action_manager_module_path is not None:
-            action_module = importlib.import_module(GLOBAL_CONFIG.action_manager_module_path)
-            action_module.register(self)
+        self.monitor = BaseMonitor(global_config)
+        self._prepare_function_list.append(self.monitor.run_report_thread)
+        self._close_function_list.append(self.monitor.close)
 
-    def _init_llm_manager(self):
-        if GLOBAL_CONFIG.llm_manager_module_path is not None:
-            llm_module = importlib.import_module(GLOBAL_CONFIG.llm_manager_module_path)
-            llm_module.register(self)
+    def _init_life_manager(self, global_config):
+        from wiseagent.core.life_manager import LifeManager
+
+        self.life_manager = LifeManager(global_config)
+
+    def _init_action_manager(self, global_config):
+        from wiseagent.action.action_manager import ActionManager
+
+        self.action_manager = ActionManager(global_config)
+
+    def _init_llm_manager(self, global_config):
+        from wiseagent.core.llm_manager import LLMManager
+
+        self.llm_manager = LLMManager(global_config)
+
+    def register(self, obj):
+        """
+        Register Action, LLM, Monitor to the agent system
+        """
+        from wiseagent.action.base_action import BaseAction
+        from wiseagent.core.llm.base_llm import BaseLLM
+
+        if isinstance(obj, BaseAction):
+            if self.action_manager is None:
+                raise Exception("Action manager is not init")
+            self.action_manager.register(obj)
+        elif isinstance(obj, BaseLLM):
+            if self.llm_manager is None:
+                raise Exception("LLM manager is not init")
+            self.llm_manager.register(obj)
 
     def _preparetion(self):
         """
@@ -114,18 +142,16 @@ class AgentCore(BaseModel):
         if self.check_agent_exist(agent_data.name):
             raise Exception("Agent name is already exist. DO NOT use the same name for different agent")
 
-        # Init the agent data to suit for the action
-        for action_config in agent_data.action_ability:
-            action_name = action_config["action_name"]
-            action = self.get_action(action_name)
+        # Init the agent data to suit for the action. Add the tool description to agent.
+        for action_item in agent_data.action_list:
+            # action_class:method_name_1,method_name_2...
+            action_class = action_item.split(":")[0]
+            method_name_list = None
+            if ":" in action_item:
+                method_name_list = action_item.split(":")[1].split(",")
+            action = self.get_action(action_class)
             action.init_agent(agent_data)
-
-        # Get the action description to form the agent tools description
-        agent_data.tools_description = ""
-        for action_config in agent_data.action_ability:
-            action_name = action_config["action_name"]
-            action = self.get_action(action_name)
-            tools_description = action.get_json_description(action_config)
+            tools_description = action.get_json_description(method_name_list)
             if tools_description:
                 agent_data.tools_description += tools_description
 
@@ -142,12 +168,13 @@ class AgentCore(BaseModel):
         if agent_data.is_init is False:
             raise Exception("Agent is not init")
         self.life_manager.life(agent_data)
+        logger.info(f"{agent_data.name}'s life start.")
 
     def get_action(self, action_name: str = None):
         return self.action_manager.get_action(action_name)
 
-    def get_llm(self, llm_name: str = None):
-        return self.llm_manager.get_llm(llm_name)
+    def get_llm(self, llm_type: str = None):
+        return self.llm_manager.get_llm(llm_type)
 
     def check_agent_exist(self, agent_name: str):
         if any([agent_data.name == agent_name for agent_data in self.agent_list]):

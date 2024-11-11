@@ -1,0 +1,13 @@
+LLM:
+  type: "The Type of LLM, such as OpenAI" 
+  api_key: "The API key for the LLM."
+  base_url: "The base URL for the LLM."
+  model_name: "The name of the model to use."
+  verbose: "Whether to print the response from the LLM."
+
+EMBEDDING:
+  type: "The Type of Embedding, such as OpenAI, "
+  api_key: "The API key for the Embedding."
+  base_url: "The base URL for the Embedding."
+  model_name: "The name of the model to use."
+

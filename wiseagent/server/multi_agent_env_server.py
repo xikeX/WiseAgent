@@ -2,13 +2,16 @@
 Author: Huang Weitao
 Date: 2024-10-06 16:52:56
 LastEditors: Huang Weitao
-LastEditTime: 2024-10-11 21:05:47
+LastEditTime: 2024-11-06 19:45:25
 Description: 
 """
+import asyncio
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from wiseagent.agent_data.base_agent_data import AgentData
+from wiseagent.common.protocol_message import STREAM_END_FLAG
+from wiseagent.core.agent import Agent
 from wiseagent.core.agent_core import get_agent_core
 from wiseagent.env.multi_agent_env import MultiAgentEnv
 
@@ -31,7 +34,7 @@ class MultiAgentEnvServer:
         if yaml_string in self.agent_yaml_string:
             return False, "agent already exist"
         self.agent_yaml_string.append(yaml_string)
-        agent_data = AgentData.from_yaml_string(yaml_string)
+        agent_data = Agent.from_yaml_string(yaml_string)
         self.agent_name_list.append(agent_data.name.lower())
         agent_core = get_agent_core()
         agent_core.init_agent(agent_data)
@@ -64,8 +67,31 @@ class MultiAgentEnvServer:
         agent_code = get_agent_core()
         for agent in agent_code.agent_list:
             if agent.name.lower() in self.agent_name_list:
-                rsp.append({"name": agent.name.lower(), "active": 0 if agent.is_sleep else 1})
+                rsp.append({"name": agent.name.lower(), "active": 1 if agent.is_activate else 0})
         return rsp
+
+    async def get_stream_message(self, message_id):
+        # Get the message from the message_cache
+        message = next(filter(lambda x: x.message_id == message_id, self.message_cache), None)
+        if message:
+            if message.content:
+                print(f"message.content:", message.content)
+                cur_message_block = message.content.replace("\n", "<new_line>")
+                yield "data: " + "<" + cur_message_block + ">" + "\n\n"
+                await asyncio.sleep(0.01)
+            while message.is_stream:
+                cur_message_block = ""
+                message_block = message.stream_queue.get()
+                if message_block == STREAM_END_FLAG:
+                    cur_message_block = message.content.replace("\n", "<new_line>")
+                    message.is_stream = False
+                    break
+                message.content += message_block
+                cur_message_block += message_block
+                cur_message_block = cur_message_block.replace("\n", "<new_line>")
+                yield "data: " + "<" + cur_message_block + ">" + "\n\n"
+                await asyncio.sleep(0.01)
+        yield "data: " + STREAM_END_FLAG + "\n\n"
 
 
 def create_app(run_mode: str = None):

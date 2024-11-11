@@ -8,9 +8,9 @@ Description:
 from typing import Any
 
 from wiseagent.action.action_annotation import action
-from wiseagent.action.base import BaseAction, BaseActionData
-from wiseagent.agent_data.base_agent_data import AgentData, get_current_agent_data
-from wiseagent.common.annotation import singleton
+from wiseagent.action.base_action import BaseAction, BaseActionData
+from wiseagent.common.singleton import singleton
+from wiseagent.core.agent import Agent, get_current_agent_data
 from wiseagent.tools.terminal_tool import TerminalTool
 
 
@@ -20,10 +20,9 @@ class TerminalActionData(BaseActionData):
 
 @singleton
 class TerminalAction(BaseAction):
-    action_name: str = "TerminalAction"
     action_description: str = "Terminal action"
 
-    def init_agent(self, agent_data: AgentData):
+    def init_agent(self, agent_data: Agent):
         agent_data.set_action_data(self.action_name, TerminalActionData())
 
     def get_termianl(self):

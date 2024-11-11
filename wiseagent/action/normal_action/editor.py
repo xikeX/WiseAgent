@@ -8,11 +8,10 @@ Description:
 import pandas as pd
 
 from wiseagent.action.action_annotation import action
-from wiseagent.action.base import BaseAction
+from wiseagent.action.base_action import BaseAction
 
 
 class EditorAction(BaseAction):
-    action_name: str = "EditorAction"
     action_description: str = "EditorAction is a tool for editing files"
 
     @action()

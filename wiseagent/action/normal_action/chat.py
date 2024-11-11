@@ -9,16 +9,14 @@ Description:
 from datetime import datetime
 
 from wiseagent.action.action_annotation import action
-from wiseagent.action.base import BaseAction
-from wiseagent.agent_data.base_agent_data import get_current_agent_data
-from wiseagent.common.annotation import singleton
-from wiseagent.core.agent_core import get_agent_core
-from wiseagent.protocol.message import EnvironmentHandleType, Message
+from wiseagent.action.base_action import BaseAction
+from wiseagent.common.protocol_message import EnvironmentHandleType, Message
+from wiseagent.common.singleton import singleton
+from wiseagent.core.agent import get_current_agent_data
 
 
 @singleton
 class Chat(BaseAction):
-    action_type: str = "NormalAction"
     action_description: str = "Chat with another agent or human."
 
     def __init__(self):
@@ -41,15 +39,12 @@ class Chat(BaseAction):
         """
         agent_data = get_current_agent_data()
         # Send message to the agent
-        target_agent = send_to
         Message(
-            send_to=target_agent.strip(),
-            env_handle_type=EnvironmentHandleType.COMUNICATION,
+            send_to=send_to.strip(),
+            env_handle_type=EnvironmentHandleType.COMMUNICATION,
             content=message.strip(),
-            time_stamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            track=[f"file:{__file__}\nfuntion:chat"],
         ).send_message()
-        output = f"Send message to {target_agent} successfully. {target_agent} have check, if you have no longer to take action, try to wait. Do not send the same message again."
+        output = f"Send message to {send_to} successfully. {send_to} have check, if you have no longer to take action, try to wait. Do not send the same message again."
         if wait_for_response:
             agent_data.observe(with_reset=True)
             agent_data.sleep()

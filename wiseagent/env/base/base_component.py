@@ -10,10 +10,9 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from wiseagent.agent_data.base_agent_data import AgentData
+from wiseagent.common.protocol_message import Message
 from wiseagent.core.agent_core import get_agent_core
-from wiseagent.monitor.reporter.base_reporter import BaseReporter
-from wiseagent.protocol.message import Message
+from wiseagent.core.reporter.base_reporter import BaseReporter
 
 
 class EnvBaseReceiver(BaseReporter, ABC):

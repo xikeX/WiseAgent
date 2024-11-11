@@ -1,0 +1,20 @@
+reporter_module_path: []
+
+# Life Schedule
+life_scheduler_module_path:
+  - "wiseagent.core.life_scheduler.autostart_life_scheduler"
+  - "wiseagent.core.life_scheduler.human_life_scheduler"
+  - "wiseagent.core.life_scheduler.react_life_scheduler"
+
+# Action
+action_module_path : 
+  - "default"
+
+base_action_class:
+  - "BaseAction"
+  - "BasePlanAction"
+
+# LLM
+llm_module_path:
+  - "wiseagent.core.llm.openai"
+  - "wiseagent.core.llm.baichuan"
