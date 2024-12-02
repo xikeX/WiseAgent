@@ -13,7 +13,7 @@ import time
 from loguru import logger
 from pydantic import BaseModel
 
-from wiseagent.config.global_config import GlobalConfig
+from wiseagent.common.global_config import GlobalConfig
 from wiseagent.core.agent_core import AgentCore
 from wiseagent.core.llm.base_llm import BaseLLM
 

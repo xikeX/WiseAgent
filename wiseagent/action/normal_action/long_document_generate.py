@@ -54,6 +54,7 @@ You are a book writing expert, you need to complete a book. Now you need to comp
 7. Do not write capter, section, subsection, etc. that do not conform to the writing style of textbooks.
 8. The Specific content must only contain the content of the section, and must not contain the title of the section.
 9. Do not repeate the capter title.
+10. The capter must be concise and clear, and the content must be related to the chapter title.
 Please generate the content of this section.
 First, you need to think about what content this section needs to write, and then write this section
 The specific content to be written is output in follwing format.
@@ -167,13 +168,12 @@ class LongDocumentGenerateAction(BaseAction):
             save_path (str): The path to save the document, default is "result.md"
         Example:
             # The id and father_id is not necessary, just for the convenience of the outline.
-            # "need_write" decides whether the content of the chapter needs to be generated.
             >>> outline = [
-                {"level":1, "chapter_title":"the first chapter", description:"the first chapter description","need_write":false},
-                {"level":2, "chapter_title":"the first section", description:"the first section description","need_write":false},
-                {"level":3, "chapter_title":"the first subsection", description:"the first subsection description","need_write":true},
-                {"level":2, "chapter_title":"the second section", description:"the second section description","need_write":true},
-                {"level":3, "chapter_title":"the second subsection", description:"the second subsection description","need_write":true},
+                {"level":1, "chapter_title":"the first chapter", description:"the first chapter description"},
+                {"level":2, "chapter_title":"the first section", description:"the first section description"},
+                {"level":3, "chapter_title":"the first subsection", description:"the first subsection description"},
+                {"level":2, "chapter_title":"the second section", description:"the second section description"},
+                {"level":3, "chapter_title":"the second subsection", description:"the second subsection description"},
             ]
             >>> create_long_document("topic", "description", outline, language="chinese", save_path="{book_name}.md")
         """
@@ -199,7 +199,7 @@ class LongDocumentGenerateAction(BaseAction):
             level = item.get("level", None)
             content += "#" * level + " " + item["chapter_title"] + "\n"
             stream_message.stream_queue.put("\n" + "#" * level + " " + item["chapter_title"] + "\n")
-            if not item.get("need_write", None):
+            if level != 3:
                 continue
             prompt = GENERATE_LONG_DOCUMENT_PROMPT.format(
                 topic=topic,
@@ -259,6 +259,7 @@ class LongDocumentGenerateAction(BaseAction):
             topic=topic, description=description, language=language
         )
         steam_mesage = CommunicationMessage(is_stream=True, stream_queue=queue.Queue()).send_message()
+
         respond = self.llm_ask(
             generate_outline_prompt,
             handle_stream_function=partial(self.parse_outline_stream, upload_mesage=steam_mesage),
@@ -268,6 +269,9 @@ class LongDocumentGenerateAction(BaseAction):
 
     def parse_outline_stream(self, rsp_message, upload_mesage: Message):
         """Parse outline stream"""
+        if "start_flag" not in upload_mesage.appendix:
+            upload_mesage.appendix["start_flag"] = True
+            upload_mesage.appendix["level_list"] = [0, 0, 0]
         if rsp_message == STREAM_END_FLAG:
             upload_mesage.stream_queue.put(STREAM_END_FLAG)
             return ""
@@ -277,7 +281,6 @@ class LongDocumentGenerateAction(BaseAction):
         if not matches:
             return rsp_message
         outline_text = ""
-        upload_mesage.appendix["level_list"] = [0, 0, 0]
         for level, content in matches:
             level = int(level) - 1
             upload_mesage.appendix["level_list"][level] += 1
@@ -292,6 +295,7 @@ class LongDocumentGenerateAction(BaseAction):
                 ).group(1)
                 outline_text += f"{pre_level} {chapter_name}\n"
                 outline_text += f"    {chapter_description}\n"
+        outline_text += "\n"
         upload_mesage.stream_queue.put(outline_text)
         return ""
 
@@ -320,6 +324,7 @@ class LongDocumentGenerateAction(BaseAction):
                 outline_text += f"{pre_level} {chapter_name}\n"
                 outline_text += f"    {chapter_description}\n"
         print(outline_text)
+        return outline_text
 
 
 def get_action():

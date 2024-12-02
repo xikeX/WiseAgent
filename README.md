@@ -4,8 +4,9 @@
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 
 ## Overview
+![架构](assets/architecture.png)
 
-`WiseAgent` is a multi-agent framework designed to promote continuous learning and collaboration among agents. It provides a flexible and scalable environment for developing and deploying agents that can adapt and improve over time through interaction with their environment.
+`WiseAgent` is an advanced framework designed around large-language for llm base agents, with the goal of uncovering the potential for continuous learning in individual agents and fostering co-evolutionary intelligence across multiple agents. It offers a comprehensive suite of features, including perception, planning, memory, execution, interactive environment management, and knowledge extraction from memory. This enables the development and deployment of agent communities that can adapt to changes and improve their performance over time.
 
 ## Features
 
@@ -120,6 +121,9 @@ pip install -e .
     ```bash
     streamlit run wiseagent\web\web_page.py
     ```
+
+## Demo
+![架构](assets/demo.gif)
 
 ## Features
 

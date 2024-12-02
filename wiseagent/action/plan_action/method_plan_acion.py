@@ -28,6 +28,7 @@ JSON_INSTRUCTION_PROMPT = """
 ## Instruction
 Please generate a plan for the agent to complete the task.
 Your respond must contain the thought and a json for action command list.
+If the task has been completed, use action_name:"MethodPlanAction" and use the action_method:"end" to stop
 The json format is:
 ```json
 [
@@ -66,6 +67,7 @@ XML_INSTRUCTION_PROMPT = """
 ## Instruction
 Please generate a plan for the agent to complete the task.
 Your respond must contain the thought and a xml for action command list.
+If the task has been completed, use action_name:"MethodPlanAction" and use the action_method:"end" to stop
 The xml format is:
 ```xml
 <action_list>
@@ -194,7 +196,7 @@ class MethodPlanAction(BasePlanAction):
                 )
             ).send_message()
             while (
-                current_plan_index < len(plan_action_data.plan_list)
+                plan_action_data.current_plan_index < len(plan_action_data.plan_list)
                 and plan_action_data.plan_list[current_plan_index]["status"] == "done"
             ):
                 plan_action_data.current_plan_index += 1
@@ -219,6 +221,11 @@ class MethodPlanAction(BasePlanAction):
     @action()
     def wait_for_task(self):
         """If there is no task, take this action and wait for a new task."""
+        self.end()
+
+    @action()
+    def wait_for_response(self):
+        """If there is no task, take this action and wait for a new respond."""
         self.end()
 
     @action()

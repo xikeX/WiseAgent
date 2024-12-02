@@ -93,13 +93,13 @@ class ReActLifeSchedule(BaseLifeScheduler):
                 logger.info(f"{command.action_method} executed. " + rsp)
 
             # Judge if the task is finished (To prevent the agent from being stuck in a loop)
-            check_end_prompt = (
-                "Do task finished? Analysize what you have done, Output <END> to stop and <CONTINUE> to continue."
-            )
-            rsp = self.llm_ask(check_end_prompt, agent_data.short_term_memory)
-            if any([tag in rsp for tag in ["<END>", "<End>", "<end>"]]):
-                logger.info(f"Agent {agent_data.name} finsihed task")
-                agent_data.sleep()
+            # check_end_prompt = (
+            #     "Do task the user requirement? Analysize what you have done, If task is finished, return <END>, else return nothing"
+            # )
+            # rsp = self.llm_ask(check_end_prompt, agent_data.short_term_memory)
+            # if any([tag in rsp for tag in ["<END>", "<End>", "<end>"]]):
+            #     logger.info(f"Agent {agent_data.name} finsihed task")
+            #     agent_data.sleep()
 
 
 def get_life_scheduler():

@@ -33,7 +33,14 @@ class BaseAction(BaseModel):
         self.action_name = self.__class__.__name__
         self.action_description = get_dict_description(self.__class__)
 
-    def get_current_action_data(self, return_agent_data=False, action_name=None):
+    def set_action_data(self, agent_data, action_data):
+        """Set the action data
+        Args:
+            agent_data (AgentData): the agent data
+            action_data (BaseActionData): the action data"""
+        agent_data.set_action_type(self.action_name, action_data)
+
+    def get_action_data(self, return_agent_data=False, action_name=None):
         """Return the current action data. If return_agent_data is True, also return the agent data"""
         agent_data = get_current_agent_data()
         action_data = agent_data.get_action_data(action_name or self.action_name) if agent_data else None

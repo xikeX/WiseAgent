@@ -3,8 +3,9 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ## Overview
+![架构](assets/architecture.png)
 
-`WiseAgent` 是一个多智能体框架，旨在促进智能体之间的持续学习和协作。它提供了一个灵活且可扩展的环境，用于开发和部署能够随着时间的推移适应和改进的智能体。
+`WiseAgent` 是一个基于大模型智能体的框架，旨在发掘单智能体的持续学习能力和多智能体之间的协同进化智能体。它提供了包括智能体感知、规划、记忆、执行、交互环境及基于记忆的知识抽取等功能，用于开发和部署能够随着时间的推移适应和改进的智能体社区。
 
 ## Features
 

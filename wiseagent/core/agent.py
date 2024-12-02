@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Union
 
 from pydantic import BaseModel
 
+from wiseagent.common.const import WORKING_DIR
 from wiseagent.common.logs import logger
 from wiseagent.common.protocol_message import (
     Message,
@@ -21,7 +22,6 @@ from wiseagent.common.protocol_message import (
     WakeupMessage,
 )
 from wiseagent.common.yaml_config import YamlConfig
-from wiseagent.config.const import WORKING_DIR
 
 # The current agent data.
 # Do not modify __CURRENT_AGENT_DATA directly in other files, as it may cause unexpected errors.

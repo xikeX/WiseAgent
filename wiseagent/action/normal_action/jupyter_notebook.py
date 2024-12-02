@@ -32,7 +32,7 @@ class JupyterNotebookAction(BaseAction):
         agent_data.set_action_data(self.action_name, JupyterNotebookActionData())
 
     def get_notnotebook_toolebook(self) -> JupyterNotebookTool:
-        return self.get_current_action_data().notebook_tool
+        return self.get_action_data().notebook_tool
 
     @action()
     def execute_code(self, code_block):
