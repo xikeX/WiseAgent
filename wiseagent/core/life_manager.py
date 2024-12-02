@@ -13,9 +13,9 @@ from typing import Any, Dict
 
 from pydantic import BaseModel
 
+from wiseagent.common.global_config import GlobalConfig
 from wiseagent.common.logs import logger
 from wiseagent.common.singleton import singleton
-from wiseagent.config.global_config import GlobalConfig
 from wiseagent.core.agent import Agent
 
 

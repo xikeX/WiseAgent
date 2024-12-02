@@ -10,7 +10,7 @@ from datetime import datetime
 
 from loguru import logger as _logger
 
-from wiseagent.config.const import LOG_PATH
+from wiseagent.common.const import LOG_PATH
 
 
 def define_log_level(print_level="INFO", logfile_level="DEBUG", name: str = None):

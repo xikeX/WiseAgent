@@ -9,7 +9,7 @@ import asyncio
 import threading
 import time
 
-from wiseagent.config.const import WORKING_DIR
+from wiseagent.common.const import WORKING_DIR
 
 
 class TerminalTool:

@@ -19,10 +19,10 @@ from streamlit_float import float_init, float_parent
 from streamlit_js_eval import streamlit_js_eval
 from web_data import WebData
 
+from wiseagent.common.const import STREAM_END_FLAG
 from wiseagent.common.parse_llm_respond import parse_command_xml_data, parse_json_data
 from wiseagent.common.protocol_command import ActionCommand, Command, parse_command
 from wiseagent.common.protocol_message import EnvironmentHandleType, Message
-from wiseagent.config.const import STREAM_END_FLAG
 
 # Set the page configuration
 st.set_page_config(page_title="WiseAgent", layout="wide")
@@ -259,8 +259,20 @@ def chat_box(web_data, window_height):
         # Display chat messages
         for message in st.session_state.chat_messages:
             with st.chat_message(message["role"]):
-                response = message["content"]
-                st.write(response)
+                if "is_stream" not in message or message["is_stream"] is False:
+                    print("****")
+                    response = message["content"]
+                    st.write(response)
+                    if "is_stream" in message:
+                        print(message["is_stream"])
+                elif "is_stream" in message and message["is_stream"] is True and "message_id" in message:
+                    data_iter = get_stream_data(
+                        url="http://localhost:5000/get_stream_message", params={"message_id": message["message_id"]}
+                    )
+                    text = st.write_stream(data_iter)
+                    print(text)
+                    message["content"] = "\n" + text
+                    message["is_stream"] = False
     # Reset chat button if chat is aborted
     if prompt := st.chat_input():
         match = re.match(r"@\s*([\w-]+)\s*(.*)", prompt)
@@ -355,15 +367,17 @@ def workspace_box(web_data, window_height):
             elif workspace_name == "preview markdown file":
                 for file_message in st.session_state.agent_workspace_map[chosen_agent_name]["file_upload"]:
                     file_name = file_message["file_name"]
-                    if file_name.split(".")[-1] not in list(CODE_TYPE.keys()):
+                    if file_name.split(".")[-1] not in list(CODE_TYPE.keys()) and file_name.split(".")[-1] != "md":
                         continue
                     with st.expander(label=file_name, expanded=True):
                         if file_message["file_content"]:
+                            print("This2")
                             base64_data = file_message["file_content"]
                             _bytes = base64.b64decode(base64_data.encode(encoding="utf-8"))
                             content = _bytes.decode(encoding="utf-8")
                             st.markdown(f"```{CODE_TYPE.get(file_name.split('.')[-1], '')}\n" + content + "\n```")
                         elif file_message["is_stream"]:
+                            print("This")
                             data_iter = get_stream_data(
                                 url="http://localhost:5000/get_stream_message",
                                 params={"message_id": file_message["message_id"]},
@@ -373,11 +387,22 @@ def workspace_box(web_data, window_height):
                             file_message["content"] = message_content
                             file_message["is_stream"] = False
                         elif file_message["content"]:
-                            st.markdown(
-                                f"```{CODE_TYPE.get(file_name.split('.')[-1], '')}\n"
-                                + file_message["content"]
-                                + "\n```"
-                            )
+                            if file_name.split(".")[-1] == "md":
+                                st.markdown(file_message["content"])
+                            else:
+                                st.markdown(
+                                    f"```{CODE_TYPE.get(file_name.split('.')[-1], '')}\n"
+                                    + file_message["content"]
+                                    + "\n```"
+                                )
+            elif workspace_name == "image":
+                for message in st.session_state.agent_workspace_map[chosen_agent_name][workspace_name]:
+                    if base64_data := message["file_content"]:
+                        # 二进制数据
+                        _bytes = base64.b64decode(base64_data.encode(encoding="utf-8"))
+                        st.image(
+                            _bytes, caption=message["file_name"].split("/")[-1].split(".")[0], use_column_width=True
+                        )
             elif workspace_name == "thought":
                 command_index = 0
                 for message in st.session_state.agent_workspace_map[chosen_agent_name][workspace_name]:
@@ -468,11 +493,17 @@ def handle_message(message: Message):
         EnvironmentHandleType.THOUGHT,
         EnvironmentHandleType.BASE_ACTION_MESSAGE,
         EnvironmentHandleType.FILE_UPLOAD,
+        EnvironmentHandleType.IMAGE,
     ]:
         add_to_workspace(agent_name, message["env_handle_type"], message)
     elif message["env_handle_type"] == EnvironmentHandleType.COMMUNICATION:
         st.session_state.chat_messages.append(
-            {"role": message["send_from"], "content": message["send_to"] + message["content"]}
+            {
+                "role": message["send_from"],
+                "is_stream": message["is_stream"],
+                "message_id": message["message_id"],
+                "content": message["content"],
+            }
         )
     elif message["env_handle_type"] in [EnvironmentHandleType.WAKEUP, EnvironmentHandleType.SLEEP]:
         agent_name = message["send_from"]
@@ -481,6 +512,7 @@ def handle_message(message: Message):
         if target_agent:
             target_agent["active"] = 0 if message["env_handle_type"] == EnvironmentHandleType.SLEEP else 1
     else:
+        print(message["env_handle_type"])
         print("handel error")
 
 

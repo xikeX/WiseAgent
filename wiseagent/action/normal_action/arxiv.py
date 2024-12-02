@@ -19,7 +19,11 @@ from tqdm import tqdm
 
 from wiseagent.action.action_annotation import action
 from wiseagent.action.base_action import BaseAction, BaseActionData
-from wiseagent.common.protocol_message import BaseActionMessage, FileUploadMessage
+from wiseagent.common.protocol_message import (
+    BaseActionMessage,
+    FileUploadMessage,
+    ImageMessage,
+)
 from wiseagent.common.singleton import singleton
 from wiseagent.common.utils import repair_path, write_excel, write_file
 from wiseagent.core.agent import Agent, get_current_agent_data
@@ -185,8 +189,10 @@ class ArxivAction(BaseAction):
             for index, (arxiv_id_list, title, authors, abstract) in enumerate(arxiv_data.current_arxiv_data)
         ]
         # Translate and classify papers
+        arxiv_data.current_arxiv_data = []
         for item in tqdm(paper_data, total=len(paper_data)):
             self.translate_and_classify(item)
+            arxiv_data.current_arxiv_data.append(item)
             BaseActionMessage(content="```json" + json.dumps(item, ensure_ascii=False) + "```").send_message()
 
         # classify the paper
@@ -229,6 +235,17 @@ class ArxivAction(BaseAction):
         return f"Save the arxiv paper task finished. The path is {save_excel_path}."
 
     # class tools for this action --------------------------------------------------
+    @action()
+    def draw_trend_chart(self, save_path: str = "output.png"):
+        """Draw the trend chart of the arxiv paper
+        Args:
+            save_path (str): The path to save the chart.
+        """
+        # Repair the path to base on the agent working space.
+        save_path = Path(save_path)
+        save_path = repair_path(save_path)
+
+        # Get the base data of this action
 
     def anaylze_data(self, html: str):
         soup = BeautifulSoup(html, "html.parser")
@@ -337,18 +354,19 @@ class ArxivAction(BaseAction):
             arxiv_paper_item["abstract_translated"] = ""
 
     @action()
-    def get_statistics(self, save_folder):
+    def statistics(self, save_folder):
         """Take this action after save data
         Args:
             save_folder (str): The folder where the data is saved
         """
+        plt.rcParams["font.sans-serif"] = ["SimHei"]
         save_folder = repair_path(save_folder)
         agent_data: Agent = get_current_agent_data()
         arxiv_action_data = agent_data.get_action_data(self.action_name)
-        cur_arxiv_data = arxiv_action_data.cur_arxiv_data
+        cur_arxiv_data = arxiv_action_data.current_arxiv_data
         label_statistic = {}
         for item in cur_arxiv_data:
-            label = item["label"]
+            label = item["label"][0]
             if label not in label_statistic:
                 label_statistic[label] = 0
             label_statistic[label] += 1
@@ -358,3 +376,7 @@ class ArxivAction(BaseAction):
         plt.ylabel("Count")
         plt.title(f"Classification Statistics form {arxiv_action_data.start_date} to {arxiv_action_data.end_date}")
         plt.savefig(save_folder / "classification_statistics.png")
+        ImageMessage(file_name=str(save_folder / "classification_statistics.png")).send_message()
+        return "Classification statistics saved. The image path is: " + str(
+            save_folder / "classification_statistics.png"
+        )
