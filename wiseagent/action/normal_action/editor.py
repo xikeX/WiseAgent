@@ -7,7 +7,7 @@ Description:
 """
 import pandas as pd
 
-from wiseagent.action.action_annotation import action
+from wiseagent.action.action_decorator import action
 from wiseagent.action.base_action import BaseAction
 
 

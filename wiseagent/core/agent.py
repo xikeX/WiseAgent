@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from wiseagent.common.const import WORKING_DIR
 from wiseagent.common.logs import logger
 from wiseagent.common.protocol_message import (
+    LLMHandleType,
     Message,
     SleepMessage,
     UserMessage,
@@ -81,7 +82,13 @@ class Agent(BaseModel, YamlConfig):
     action_data_config: dict = {}
     action_data: Dict[str, Any] = {}
     life_schedule_config: str = ""
-    llm_config: Dict[str, Any] = {"llm_type": None, "api_key": None,"temperature": None, "model_name": None, "base_url": None}
+    llm_config: Dict[str, Any] = {
+        "llm_type": None,
+        "api_key": None,
+        "temperature": None,
+        "model_name": None,
+        "base_url": None,
+    }
     embedding_config: Dict[str, Any] = {"llm_type": None, "api_key": None, "model_name": None, "base_url": None}
 
     # Control Sate
@@ -108,10 +115,23 @@ class Agent(BaseModel, YamlConfig):
         kwargs["name"] = name
         kwargs["description"] = description
         kwargs["action_list"] = action_list or []
-        if default_plan not in kwargs["action_list"]:
+        if default_plan and default_plan not in kwargs["action_list"]:
             kwargs["action_list"].append(default_plan)
         kwargs["life_schedule_config"] = life_schedule_config
         return cls(**kwargs)
+
+    def input(self, content: str):
+        """
+        Input a message to the agent.
+        Args:
+            content (str): The message content.
+        """
+        message = UserMessage(
+            send_from="User",
+            send_to=self.name,
+            content=content,
+        )
+        self.add_memory(message=message, from_env=True)
 
     def after_init(self):
         """
@@ -160,6 +180,32 @@ class Agent(BaseModel, YamlConfig):
         else:
             raise TypeError("Action must be an instance of BaseAction")
 
+    def wait_for_new_message(self):
+        """
+        Wait for a new message from the environment.
+        """
+        self.wake_up_event.wait()
+        self.wake_up_event.clear()
+
+    def register_life_scheduler(self, life_scheduler):
+        """
+        Register a life schedule to the agent.
+        Args:
+            life_schedule (BaseLifeSchedule): The life schedule to register.
+        """
+        from wiseagent.core.life_scheduler.base_life_scheduler import BaseLifeScheduler
+
+        if isinstance(life_scheduler, BaseLifeScheduler):
+            self.life_schedule_config = life_scheduler.name
+            from wiseagent.core.agent_core import get_agent_core
+
+            agent_core = get_agent_core()
+            if agent_core._have_been_init is False:
+                agent_core.init()
+            agent_core.register(life_scheduler)
+        else:
+            raise TypeError("Life schedule must be an instance of BaseLifeScheduler")
+
     def get_action_config(self, action_name):
         return self.action_data_config.get(action_name, None)
 
@@ -207,11 +253,14 @@ class Agent(BaseModel, YamlConfig):
                 self.new_observe_message_number = 0
         return res
 
-    def set_action_data(self, action_name: str, data: Any):
+    def set_action_data(self, action_name: str, data: Any, recover=False):
         """
         This function is used to set the data of the action.
         """
-        self.action_data[action_name] = data
+        if action_name not in self.action_data:
+            self.action_data[action_name] = data
+        elif recover:
+            self.action_data[action_name] = data
         return data
 
     def get_action_data(self, action_name: str):
@@ -282,7 +331,7 @@ class Agent(BaseModel, YamlConfig):
         agent_core = get_agent_core()
         agent_core.remove_agent(self.name)
 
-    def life(self,new_thread=True):
+    def life(self, new_thread=True):
         """Start the agent's life cycle."""
         from wiseagent.core.agent_core import get_agent_core
 
@@ -292,7 +341,7 @@ class Agent(BaseModel, YamlConfig):
         if self.is_init is False:
             agent_core.init_agent(self)
         if self.is_alive is False:
-            agent_core.start_agent_life(self,new_thread)
+            agent_core.start_agent_life(self, new_thread)
 
     def ask(self, content):
         """

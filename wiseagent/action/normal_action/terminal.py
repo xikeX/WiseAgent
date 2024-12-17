@@ -7,7 +7,7 @@ Description:
 """
 from typing import Any
 
-from wiseagent.action.action_annotation import action
+from wiseagent.action.action_decorator import action
 from wiseagent.action.base_action import BaseAction, BaseActionData
 from wiseagent.common.singleton import singleton
 from wiseagent.core.agent import Agent, get_current_agent_data

@@ -8,9 +8,13 @@ Description:
 
 from datetime import datetime
 
-from wiseagent.action.action_annotation import action
+from wiseagent.action.action_decorator import action
 from wiseagent.action.base_action import BaseAction
-from wiseagent.common.protocol_message import EnvironmentHandleType, Message
+from wiseagent.common.protocol_message import (
+    CommunicationMessage,
+    EnvironmentHandleType,
+    Message,
+)
 from wiseagent.common.singleton import singleton
 from wiseagent.core.agent import get_current_agent_data
 
@@ -39,9 +43,8 @@ class Chat(BaseAction):
         """
         agent_data = get_current_agent_data()
         # Send message to the agent
-        Message(
+        CommunicationMessage(
             send_to=send_to.strip(),
-            env_handle_type=EnvironmentHandleType.COMMUNICATION,
             content=message.strip(),
         ).send_message()
         output = f"Send message to {send_to} successfully. {send_to} have check, if you have no longer to take action, try to wait. Do not send the same message again."

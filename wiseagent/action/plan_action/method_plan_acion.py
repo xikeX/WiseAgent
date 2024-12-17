@@ -8,7 +8,7 @@ Description:
 import json
 from typing import Dict, List
 
-from wiseagent.action.action_annotation import action
+from wiseagent.action.action_decorator import action
 from wiseagent.action.base_action import BaseActionData, BasePlanAction
 from wiseagent.common.parse_llm_respond import parse_command_xml_data, parse_json_data
 from wiseagent.common.protocol_command import ActionCommand, parse_command
@@ -66,7 +66,7 @@ XML_INSTRUCTION_PROMPT = """
 {current_task}
 ## Instruction
 Please generate a plan for the agent to complete the task.
-Your respond must contain the thought and a xml for action command list.
+Your respond must contain the thought and a xml for action command list. the thought must contain what is you task, what is your previouse action, what do you want to do next..
 If the task has been completed, use action_name:"MethodPlanAction" and use the action_method:"end" to stop
 The xml format is:
 ```xml
@@ -138,7 +138,7 @@ class MethodPlanAction(BasePlanAction):
     def init_agent(self, agent_data: Agent):
         agent_data.set_action_data("MethodPlanAction", MethodPlanActionData(agent_data))
 
-    def plan(self, command_list: List[ActionCommand]) -> Dict:
+    def plan(self, command_list: List[ActionCommand]):
         """Execute the plan action
         Args:
             command_list (List[ActionCommand]): The command list of the agent
@@ -172,7 +172,7 @@ class MethodPlanAction(BasePlanAction):
         ThoughtMessage(
             content=json.dumps([c.to_dict() for c in command_list], ensure_ascii=False), cause_by="MethodPlanAction"
         ).send_message()
-        return {"thoughts": thoughts, "action_command_list": command_list}
+        return thoughts, command_list
 
     @action()
     def finish_current_task(self, task_id, task_description):
@@ -227,14 +227,6 @@ class MethodPlanAction(BasePlanAction):
     def wait_for_response(self):
         """If there is no task, take this action and wait for a new respond."""
         self.end()
-
-    @action()
-    def end(self):
-        """Use this action to stop. It is command when you do not recieve any useful command or do the final response."""
-        agent_data = get_current_agent_data()
-        agent_data.observe()
-        agent_data.sleep()
-        return ""
 
     def get_plan_list_description(self, plan_list):
         res = ""

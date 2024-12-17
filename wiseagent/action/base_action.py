@@ -14,7 +14,7 @@ from typing import Dict, List
 import multidict
 from pydantic import BaseModel
 
-from wiseagent.action.action_annotation import get_dict_description
+from wiseagent.action.action_decorator import action, get_dict_description
 from wiseagent.common.logs import logger
 from wiseagent.common.protocol_command import ActionCommand
 from wiseagent.common.protocol_message import Message, UserMessage
@@ -40,7 +40,7 @@ class BaseAction(BaseModel):
         if return_agent_data:
             return action_data, agent_data
         return action_data
-    
+
     def set_action_data(self, agent, data):
         """Set the action data
         Args:
@@ -87,7 +87,9 @@ class BaseAction(BaseModel):
             command_list (List[str]): The list of commands to be checked and potentially modified.
         """
 
-    def llm_ask(self, prompt=None, memory: List[Message] = None, system_prompt: str = None, handle_stream_function=None):
+    def llm_ask(
+        self, prompt=None, memory: List[Message] = None, system_prompt: str = None, handle_stream_function=None
+    ):
         """Ask the LLM to generate a response to the given prompt."""
         agent_data: Agent = get_current_agent_data()
         agent_core = get_agent_core()
@@ -96,6 +98,11 @@ class BaseAction(BaseModel):
             memory = agent_data.get_latest_memory()
         if prompt is not None:
             memory = memory + [UserMessage(content=prompt)]
+        if system_prompt is None:
+            system_prompt = agent_data.get_agent_system_prompt(
+                tools_description="", agent_instructions="", agent_example=""
+            )
+        memory = memory + [UserMessage(content=prompt)]
         llm = agent_core.get_llm(agent_data.llm_config["llm_type"])
         if not llm:
             raise Exception("LLM not found")
@@ -112,8 +119,23 @@ class BaseAction(BaseModel):
 
 class BasePlanAction(BaseAction):
     @abstractmethod
-    def plan(self, command_list: List[ActionCommand]) -> Dict:
+    def plan(self, command_list: List[ActionCommand]):
+        """
+        Plan the action based on the given command list.
+        Args:
+            command_list (List[ActionCommand]): The list of commands to be planned.
+        Returns:
+            Tuple: thoughts, command_list"""
         raise NotImplementedError("BaseActionData can not be plan")
+
+    @action()
+    def end(self):
+        """Use this action to stop. It is command when you do not recieve any useful command or do the final response.
+        User this action to stop loop."""
+        agent_data = get_current_agent_data()
+        agent_data.observe()
+        agent_data.sleep()
+        return ""
 
 
 class BaseActionData(BaseModel):

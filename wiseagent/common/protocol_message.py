@@ -14,13 +14,13 @@ from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, field_validator
+
 from wiseagent.common.logs import logger
-from wiseagent.core.agent_core import get_agent_core
 
 STREAM_END_FLAG = "[STREAM_END_FLAG]"
 
 
-class EnvironmentHandleType():
+class EnvironmentHandleType:
     COMMUNICATION = "communication"
     CONTROL = "control"
     THOUGHT = "thought"
@@ -34,7 +34,7 @@ class EnvironmentHandleType():
     IMAGE = "image"
 
 
-class LLMHandleType():
+class LLMHandleType:
     USER = "user"
     AI = "assistant"
     LLM = "assistant"
@@ -47,7 +47,7 @@ class Message(BaseModel):
     cause_by: str = ""
     content: str = ""
     time_stamp: str = ""
-    env_handle_type: EnvironmentHandleType = None
+    env_handle_type: Any = None
     llm_handle_type: LLMHandleType = None
     appendix: dict = {}
     is_stream: bool = False
@@ -101,6 +101,8 @@ class Message(BaseModel):
         """
         if self.env_handle_type == None:
             raise ValueError("env_handle_type is not set")
+        from wiseagent.core.agent_core import get_agent_core
+
         agent_core = get_agent_core()
         if agent_core and agent_core.is_running:
             agent_core.report_message(self)

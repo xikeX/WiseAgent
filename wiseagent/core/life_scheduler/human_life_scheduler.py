@@ -59,7 +59,7 @@ class HumanLifeScheduler(BaseLifeScheduler):
                     getattr(current_action, command.action_method)
                 ):
                     # current_action.action_method(self,agent_data,command.params)
-                    method = current_action.get_method(action.action_method)
+                    method = current_action.get_method(command.action_method)
                     rsp = method(**command.args)
                 else:
                     rsp = f"{command.action_method} not found"

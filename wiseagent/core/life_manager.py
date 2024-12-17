@@ -53,11 +53,12 @@ class LifeManager(BaseModel):
             life_scheduler = import_module.get_life_scheduler()
             if life_scheduler.name not in self.life_scheduler_map:
                 self.life_scheduler_map[life_scheduler.name] = life_scheduler
-    def add_life_scheduler(self, life_scheduler: BaseLifeScheduler):
+
+    def register(self, life_scheduler: BaseLifeScheduler):
         """Add a life scheduler to the life manager."""
         self.life_scheduler_map[life_scheduler.name] = life_scheduler
-    
-    def life(self, agent_data: Agent,new_thread):
+
+    def life(self, agent_data: Agent, new_thread):
         """Start a life of agent. Do not repeatly start the life of the agent.
 
         Args:

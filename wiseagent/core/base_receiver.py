@@ -63,12 +63,12 @@ class BaseReceiver(BaseModel):
 
             # Determine the target agent(s) for the message.
             if message.send_to == "all":
-                for agent in agent_core.agent_list:
+                for agent in agent_core.agent_manager:
                     if agent.name.lower() != message.send_from:
                         agent.add_memory(message, from_env=True)
             else:
                 receive_agent = next(
-                    (agent for agent in agent_core.agent_list if message.send_to == agent.name.lower()), None
+                    (agent for agent in agent_core.agent_manager if message.send_to == agent.name.lower()), None
                 )
                 if receive_agent:
                     receive_agent.add_memory(message, from_env=True)

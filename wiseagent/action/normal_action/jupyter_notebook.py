@@ -9,7 +9,7 @@ Description:
 
 from pydantic import ConfigDict
 
-from wiseagent.action.action_annotation import action
+from wiseagent.action.action_decorator import action
 from wiseagent.action.base_action import BaseAction, BaseActionData
 from wiseagent.common.protocol_message import FileUploadMessage
 from wiseagent.common.utils import read_rb, repair_path
@@ -31,11 +31,7 @@ class JupyterNotebookAction(BaseAction):
     def init_agent(self, agent_data: "AgentData"):
         agent_data.set_action_data(self.action_name, JupyterNotebookActionData())
 
-<<<<<<< HEAD
     def get_notebook_tool(self) -> JupyterNotebookTool:
-=======
-    def get_notnotebook_toolebook(self) -> JupyterNotebookTool:
->>>>>>> origin/dev
         return self.get_action_data().notebook_tool
 
     @action()

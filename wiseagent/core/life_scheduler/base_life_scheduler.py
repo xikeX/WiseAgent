@@ -11,10 +11,8 @@ from typing import List
 
 from pydantic import BaseModel
 
-from wiseagent.action.base_action import BasePlanAction
 from wiseagent.common.protocol_message import Message, UserMessage
 from wiseagent.core.agent import Agent, get_current_agent_data
-from wiseagent.core.agent_core import get_agent_core
 
 
 class BaseLifeScheduler(BaseModel, ABC):
@@ -33,6 +31,8 @@ class BaseLifeScheduler(BaseModel, ABC):
     def llm_ask(self, prompt, memory: List[Message] = None, system_prompt: str = None, handle_stream_function=None):
         """Ask the LLM to generate a response to the given prompt."""
         agent_data: Agent = get_current_agent_data()
+        from wiseagent.core.agent_core import get_agent_core
+
         agent_core = get_agent_core()
         if memory is None:
             # Get the lastest memory from the agent autumaticly
@@ -52,11 +52,16 @@ class BaseLifeScheduler(BaseModel, ABC):
         )
         return rsp
 
-    def get_agent_plan_action(self,agent_data,agent_core):
+    def get_agent_plan_action(self, agent_data):
         """
         Get the plan and normal action list
-        :param agent_data:"""
+        :param agent_data:
+        """
+        from wiseagent.action.base_action import BasePlanAction
+        from wiseagent.core.agent_core import get_agent_core
+
         plan_action_list = []
+        agent_core = get_agent_core()
         for action_item in agent_data.action_list:
             action_name = action_item.split(":")[0]
             action = agent_core.get_action(action_name)

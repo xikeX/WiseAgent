@@ -17,7 +17,7 @@ from matplotlib import pyplot as plt
 from playwright.sync_api import sync_playwright
 from tqdm import tqdm
 
-from wiseagent.action.action_annotation import action
+from wiseagent.action.action_decorator import action
 from wiseagent.action.base_action import BaseAction, BaseActionData
 from wiseagent.common.protocol_message import (
     BaseActionMessage,
