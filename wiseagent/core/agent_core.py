@@ -12,9 +12,9 @@ from typing import Any, List
 
 from pydantic import BaseModel, Field
 
+from wiseagent.common.global_config import GlobalConfig
 from wiseagent.common.logs import logger
 from wiseagent.common.singleton import singleton
-from wiseagent.config.global_config import GlobalConfig
 
 
 @singleton
@@ -50,11 +50,11 @@ class AgentCore(BaseModel):
         if global_config is not None:
             self.global_config = global_config
         elif config_file is not None:
-            from wiseagent.config.global_config import GlobalConfig
+            from wiseagent.common.global_config import GlobalConfig
 
             self.global_config = GlobalConfig.from_yaml_file(config_file=config_file)
         else:
-            from wiseagent.config.global_config import GlobalConfig
+            from wiseagent.common.global_config import GlobalConfig
 
             self.global_config = GlobalConfig.default()
 

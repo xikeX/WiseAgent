@@ -19,10 +19,10 @@ from typing import Any, List
 
 from pydantic import BaseModel
 
+from wiseagent.common.global_config import GlobalConfig
 from wiseagent.common.logs import logger
 from wiseagent.common.protocol_message import Message
 from wiseagent.common.singleton import singleton
-from wiseagent.config.global_config import GlobalConfig
 from wiseagent.core.agent_core import AgentCore, get_agent_core
 from wiseagent.core.reporter.base_reporter import BaseReporter
 

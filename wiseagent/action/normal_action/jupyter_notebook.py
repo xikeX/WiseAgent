@@ -31,7 +31,11 @@ class JupyterNotebookAction(BaseAction):
     def init_agent(self, agent_data: "AgentData"):
         agent_data.set_action_data(self.action_name, JupyterNotebookActionData())
 
+<<<<<<< HEAD
     def get_notebook_tool(self) -> JupyterNotebookTool:
+=======
+    def get_notnotebook_toolebook(self) -> JupyterNotebookTool:
+>>>>>>> origin/dev
         return self.get_action_data().notebook_tool
 
     @action()

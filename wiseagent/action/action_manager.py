@@ -15,10 +15,10 @@ import platform
 from pydantic import BaseModel
 
 from wiseagent.action.base_action import BaseAction
+from wiseagent.common.global_config import GlobalConfig
 from wiseagent.common.logs import logger
 from wiseagent.common.singleton import singleton
 from wiseagent.common.utils import listdir
-from wiseagent.config.global_config import GlobalConfig
 
 PACKAGE_NAME = "wiseagent.action."
 

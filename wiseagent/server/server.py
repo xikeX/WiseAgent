@@ -2,7 +2,7 @@
 Author: Huang Weitao
 Date: 2024-10-05 00:38:39
 LastEditors: Huang Weitao
-LastEditTime: 2024-10-06 17:37:43
+LastEditTime: 2024-11-20 11:55:51
 Description: 
 """
 
@@ -68,42 +68,6 @@ async def get_stream_message(message_id: str):
 @app.post("/get_agent_list")
 async def get_agent_list():
     return {"agent_list": multi_agent_env_server.get_agent_list()}
-
-
-def test_stream():
-    message_id = "12345678"
-    message = Message(message_id=message_id, is_stream=True, stream_queue=queue.Queue())
-
-    def event_stream():
-        for i in range(30):
-            game_2048_python_code = """
-import random
-import time
-import numpy as np
-import matplotlib.pyplot as plt
-
-def get_empty_position(board):
-    empty_positions = []
-    for i in range(4):
-        for j in range(4):
-            if board[i][j] == 0:
-                empty_positions.append((i, j))
-    return empty_positions
-
-def move(board, direction): 
-    if direction == 'up':
-        for j in range(4):
-            for i in range(1, 4):
-                if board[i][j] != 0:
-"""
-        for ch in game_2048_python_code:
-            message.stream_queue.put(ch)
-            time.sleep(0.001)
-        message.stream_queue.put(STREAM_END_FLAG)
-
-    multi_agent_env_server.message_cache.append(message)
-    threading.Thread(target=event_stream).start()
-    uvicorn.run(app, host="0.0.0.0", port=5000)
 
 
 if __name__ == "__main__":

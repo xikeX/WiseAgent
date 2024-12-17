@@ -31,6 +31,7 @@ class EnvironmentHandleType():
     WAKEUP = "wakeup"
     CREATE_TASK = "create_task"
     FINISH_TASK = "finish_task"
+    IMAGE = "image"
 
 
 class LLMHandleType():
@@ -143,6 +144,32 @@ class FileUploadMessage(Message):
     """
 
     env_handle_type: str = EnvironmentHandleType.FILE_UPLOAD
+    file_name: str = ""
+    file_content: Any = b""
+
+    @field_validator("file_name", mode="before")
+    def convert_to_path(cls, v):
+        if isinstance(v, Path):
+            return str(v)
+        return v
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.file_name == "" and self.stream_queue is None:
+            raise ValueError("file_name must be specified")
+        if self.file_content == b"" and self.file_name and not self.is_stream:
+            from wiseagent.common.utils import read_rb
+
+            self.file_content = read_rb(self.file_name)
+
+    def _to_dict(self, exclude=["file_content"]):
+        data = super()._to_dict(exclude=exclude)
+        data["file_content"] = base64.b64encode(self.file_content).decode("utf-8")
+        return data
+
+
+class ImageMessage(Message):
+    env_handle_type: str = EnvironmentHandleType.IMAGE
     file_name: str = ""
     file_content: Any = b""
 
