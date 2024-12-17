@@ -13,15 +13,14 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, field_validator
-
+from pydantic import BaseModel, ConfigDict, field_validator
 from wiseagent.common.logs import logger
 from wiseagent.core.agent_core import get_agent_core
 
 STREAM_END_FLAG = "[STREAM_END_FLAG]"
 
 
-class EnvironmentHandleType(str, Enum):
+class EnvironmentHandleType():
     COMMUNICATION = "communication"
     CONTROL = "control"
     THOUGHT = "thought"
@@ -34,9 +33,10 @@ class EnvironmentHandleType(str, Enum):
     FINISH_TASK = "finish_task"
 
 
-class LLMHandleType(str, Enum):
+class LLMHandleType():
     USER = "user"
     AI = "assistant"
+    LLM = "assistant"
 
 
 class Message(BaseModel):
@@ -52,6 +52,7 @@ class Message(BaseModel):
     is_stream: bool = False
     # if is_stream is True, queue will be assigned a queue object
     stream_queue: Any = None
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

@@ -31,8 +31,8 @@ class JupyterNotebookAction(BaseAction):
     def init_agent(self, agent_data: "AgentData"):
         agent_data.set_action_data(self.action_name, JupyterNotebookActionData())
 
-    def get_notnotebook_toolebook(self) -> JupyterNotebookTool:
-        return self.get_current_action_data().notebook_tool
+    def get_notebook_tool(self) -> JupyterNotebookTool:
+        return self.get_action_data().notebook_tool
 
     @action()
     def execute_code(self, code_block):
@@ -40,7 +40,7 @@ class JupyterNotebookAction(BaseAction):
         Args:
             code_block (str): code to execute
         """
-        notebook_tool = self.get_notnotebook_toolebook()
+        notebook_tool = self.get_notebook_tool()
         output, img_list = notebook_tool.execute_code(code_block)
         # agent_data: AgentData = get_current_agent_data()
         # temp_save_file_name = agent_data.agent_id + "temp.ipynb"
@@ -51,13 +51,13 @@ class JupyterNotebookAction(BaseAction):
         )
 
     def shutdown(self):
-        notebook_tool = self.get_notnotebook_toolebook()
+        notebook_tool = self.get_notebook_tool()
         notebook_tool.shutdown()
         return "Notebook Shut Down"
 
     def _save_notebook(self, file_name, upload_file=False):
         file_name = repair_path(file_name)
-        notebook_tool = self.get_notnotebook_toolebook()
+        notebook_tool = self.get_notebook_tool()
         notebook_tool.save_notebook(file_name)
         if upload_file:
             FileUploadMessage(file_name=str(file_name), file_content=read_rb(file_name)).send_message()

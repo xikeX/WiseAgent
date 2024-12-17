@@ -11,7 +11,7 @@ from wiseagent.common.protocol_message import (
 )
 from wiseagent.common.singleton import singleton
 from wiseagent.core.agent_core import get_agent_core
-from wiseagent.env.base.base import BaseEnvironment
+from wiseagent.env.base import BaseEnvironment
 
 ENV_DESCRIPTION = """
 The environment is a multi-agent environment, which includes {agent_name_list} and user (User).

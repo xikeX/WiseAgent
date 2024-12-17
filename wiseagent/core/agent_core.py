@@ -164,10 +164,10 @@ class AgentCore(BaseModel):
             self.agent_list.append(agent_data)
         return agent_data
 
-    def start_agent_life(self, agent_data):
+    def start_agent_life(self, agent_data,new_thread):
         if agent_data.is_init is False:
             raise Exception("Agent is not init")
-        self.life_manager.life(agent_data)
+        self.life_manager.life(agent_data,new_thread)
         logger.info(f"{agent_data.name}'s life start.")
 
     def get_action(self, action_name: str = None):
@@ -190,6 +190,8 @@ class AgentCore(BaseModel):
     def report_message(self, message: str):
         self.monitor.add_message(message)
 
+    def remove_agent(self,agent_name):
+        self.agent_list = [agent_data for agent_data in self.agent_list if agent_data.name != agent_name]
 
 def get_agent_core():
     return AgentCore()

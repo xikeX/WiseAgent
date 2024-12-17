@@ -44,6 +44,7 @@ You are a helpful agent and follow is the profile of you.
 
 ## Current Environment
 {current_environment}
+
 ## Tools Description
 {tools_description}
 
@@ -52,9 +53,7 @@ You are a helpful agent and follow is the profile of you.
 
 ## Instructions
 {agent_instructions}
-
-你的所有回答都必须遵循以上描述，且必须使用中文回答。
-"""
+""".strip()
 
 
 class Agent(BaseModel, YamlConfig):
@@ -82,8 +81,8 @@ class Agent(BaseModel, YamlConfig):
     action_data_config: dict = {}
     action_data: Dict[str, Any] = {}
     life_schedule_config: str = ""
-    llm_config: Dict[str, str] = {"llm_type": None, "api_key": None}
-    embedding_config: Dict[str, str] = {"llm_type": None, "api_key": None, "model_name": None, "base_url": None}
+    llm_config: Dict[str, Any] = {"llm_type": None, "api_key": None,"temperature": None, "model_name": None, "base_url": None}
+    embedding_config: Dict[str, Any] = {"llm_type": None, "api_key": None, "model_name": None, "base_url": None}
 
     # Control Sate
     _is_init: bool = False
@@ -183,16 +182,18 @@ class Agent(BaseModel, YamlConfig):
         """
         try:
             with self.short_term_memory_lock:
-                logger.info(f"Add message to short term memory: {message}")
+                # logger.info(f"Add message to short term memory: {message}")
+                logger.info(f"Receive message from {message.send_from}")
                 self.short_term_memory.append(message)
                 if from_env:
-                    if self.is_activate is False:
-                        self.wake_up()
+                    self.wake_up()
                     self.new_observe_message_number += 1
         except Exception as e:
             logger.error(f"Error adding message to memory: {e}")
 
     def get_latest_memory(self, last_k: int = 30):
+        if last_k < 0:
+            return self.short_term_memory
         return self.short_term_memory[-min(last_k, len(self.short_term_memory)) :]
 
     def set_short_term_memory(self, memory: List[Message]):
@@ -211,6 +212,7 @@ class Agent(BaseModel, YamlConfig):
         This function is used to set the data of the action.
         """
         self.action_data[action_name] = data
+        return data
 
     def get_action_data(self, action_name: str):
         if action_name in self.action_data:
@@ -250,7 +252,8 @@ class Agent(BaseModel, YamlConfig):
 
     def wake_up(self):
         WakeupMessage(send_from=self.name).send_message()
-        self.wake_up_event.set()
+        if not self.wake_up_event.is_set():
+            self.wake_up_event.set()
         self._is_activate = True
 
     def __enter__(self):
@@ -269,7 +272,17 @@ class Agent(BaseModel, YamlConfig):
         CURRENT_AGENT_DATA.set(None)
         logger.debug("__CURRENT_AGENT_DATA: Release")
 
-    def life(self):
+    def close(self):
+        self._is_alive = False
+        # Wake up to exit the life thread.
+        self.wake_up_event.set()
+        # Remove From agent_core
+        from wiseagent.core.agent_core import get_agent_core
+
+        agent_core = get_agent_core()
+        agent_core.remove_agent(self.name)
+
+    def life(self,new_thread=True):
         """Start the agent's life cycle."""
         from wiseagent.core.agent_core import get_agent_core
 
@@ -279,7 +292,7 @@ class Agent(BaseModel, YamlConfig):
         if self.is_init is False:
             agent_core.init_agent(self)
         if self.is_alive is False:
-            agent_core.start_agent_life(self)
+            agent_core.start_agent_life(self,new_thread)
 
     def ask(self, content):
         """

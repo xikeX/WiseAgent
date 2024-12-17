@@ -51,6 +51,9 @@ def action(use_knowledge=False):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             if use_knowledge:
+                # summary what has been done so far
+
+                #
                 # set the action knowledge
                 current_agent_data = get_current_agent_data()
                 current_agent_data.set_action_knowledge()
@@ -63,7 +66,6 @@ def action(use_knowledge=False):
 
         # set the action to True. This wil be used to check if the function is an action.
         wrapper.action = True
-
         return wrapper
 
     return decorator

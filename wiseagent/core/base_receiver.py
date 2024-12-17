@@ -44,7 +44,7 @@ class BaseReceiver(BaseModel):
             if not isinstance(m, Message):
                 logger.info(f"Message {m} is not a Message. andd will be ignored")
                 continue
-            m.content = f"Message from <{m.send_from}> to <{m.send_to}>: {m.content}"
+            # m.content = f"Message from <{m.send_from}> to <{m.send_to}>: {m.content}"
             self.message_queue.put(m)
 
     def _receive(self, agent_core: "AgentCore"):
@@ -73,7 +73,7 @@ class BaseReceiver(BaseModel):
                 if receive_agent:
                     receive_agent.add_memory(message, from_env=True)
                 else:
-                    logger.warning(f"Message {message} is not sent to any agent")
+                    self.message_queue.put(message)
 
     def run_receive_thread(self) -> bool:
         # Check if the thread is already running.

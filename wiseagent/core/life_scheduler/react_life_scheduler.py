@@ -28,7 +28,6 @@ from wiseagent.core.life_scheduler.base_life_scheduler import BaseLifeScheduler
 
 @singleton
 class ReActLifeSchedule(BaseLifeScheduler):
-    name: str = "ReActLifeSchedule"
 
     def life(self):
         """Main life cycle method for the agent."""
@@ -60,6 +59,7 @@ class ReActLifeSchedule(BaseLifeScheduler):
         while agent_data.is_alive:
             if not agent_data.is_activate:
                 agent_data.wake_up_event.wait()
+                agent_data.wake_up_event.clear()
                 continue
             # Make Plan
             command_list: List[ActionCommand] = []
