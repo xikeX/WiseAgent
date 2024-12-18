@@ -14,7 +14,7 @@ from typing import Dict, List
 import multidict
 from pydantic import BaseModel
 
-from wiseagent.action.action_annotation import get_dict_description
+from wiseagent.action.action_decorator import action, get_dict_description
 from wiseagent.common.logs import logger
 from wiseagent.common.protocol_command import ActionCommand
 from wiseagent.common.protocol_message import Message, UserMessage
@@ -33,13 +33,6 @@ class BaseAction(BaseModel):
         self.action_name = self.__class__.__name__
         self.action_description = get_dict_description(self.__class__)
 
-    def set_action_data(self, agent_data, action_data):
-        """Set the action data
-        Args:
-            agent_data (AgentData): the agent data
-            action_data (BaseActionData): the action data"""
-        agent_data.set_action_type(self.action_name, action_data)
-
     def get_action_data(self, return_agent_data=False, action_name=None):
         """Return the current action data. If return_agent_data is True, also return the agent data"""
         agent_data = get_current_agent_data()
@@ -47,6 +40,17 @@ class BaseAction(BaseModel):
         if return_agent_data:
             return action_data, agent_data
         return action_data
+
+    def set_action_data(self, agent, data):
+        """Set the action data
+        Args:
+            agent (Agent): the agent data
+            data (Any): the data to set
+        Returns:
+            Any: the data
+        """
+        agent.set_action_data(self.action_name, data)
+        return data
 
     def _description_filter(self, method_name_list):
         """Get the description of the action method"""
@@ -62,7 +66,7 @@ class BaseAction(BaseModel):
 
     def get_json_description(self, action_config=None):
         description = self._description_filter(action_config)
-        res = json.dumps(description, ensure_ascii=False, indent=4)
+        res = json.dumps(description, ensure_ascii=False)
         return res
 
     def get_xml_description(self, action_config=None):
@@ -83,13 +87,21 @@ class BaseAction(BaseModel):
             command_list (List[str]): The list of commands to be checked and potentially modified.
         """
 
-    def llm_ask(self, prompt, memory: List[Message] = None, system_prompt: str = None, handle_stream_function=None):
+    def llm_ask(
+        self, prompt=None, memory: List[Message] = None, system_prompt: str = None, handle_stream_function=None
+    ):
         """Ask the LLM to generate a response to the given prompt."""
         agent_data: Agent = get_current_agent_data()
         agent_core = get_agent_core()
         if memory is None:
             # Get the lastest memory from the agent autumaticly
             memory = agent_data.get_latest_memory()
+        if prompt is not None:
+            memory = memory + [UserMessage(content=prompt)]
+        if system_prompt is None:
+            system_prompt = agent_data.get_agent_system_prompt(
+                tools_description="", agent_instructions="", agent_example=""
+            )
         memory = memory + [UserMessage(content=prompt)]
         llm = agent_core.get_llm(agent_data.llm_config["llm_type"])
         if not llm:
@@ -107,8 +119,23 @@ class BaseAction(BaseModel):
 
 class BasePlanAction(BaseAction):
     @abstractmethod
-    def plan(self, command_list: List[ActionCommand]) -> Dict:
+    def plan(self, command_list: List[ActionCommand]):
+        """
+        Plan the action based on the given command list.
+        Args:
+            command_list (List[ActionCommand]): The list of commands to be planned.
+        Returns:
+            Tuple: thoughts, command_list"""
         raise NotImplementedError("BaseActionData can not be plan")
+
+    @action()
+    def end(self):
+        """Use this action to stop. It is command when you do not recieve any useful command or do the final response.
+        User this action to stop loop."""
+        agent_data = get_current_agent_data()
+        agent_data.observe()
+        agent_data.sleep()
+        return ""
 
 
 class BaseActionData(BaseModel):

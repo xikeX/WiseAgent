@@ -29,7 +29,7 @@ class AgentCore(BaseModel):
     monitor: Any = Field(default=None)
 
     # The agent list in current system
-    agent_list: List[Any] = []
+    agent_manager: List[Any] = []
 
     # The workflow controller of the system
     # workflow_controller: Any = Field(default=None)
@@ -112,6 +112,7 @@ class AgentCore(BaseModel):
         Register Action, LLM, Monitor to the agent system
         """
         from wiseagent.action.base_action import BaseAction
+        from wiseagent.core.life_scheduler.base_life_scheduler import BaseLifeScheduler
         from wiseagent.core.llm.base_llm import BaseLLM
 
         if isinstance(obj, BaseAction):
@@ -122,6 +123,10 @@ class AgentCore(BaseModel):
             if self.llm_manager is None:
                 raise Exception("LLM manager is not init")
             self.llm_manager.register(obj)
+        elif isinstance(obj, BaseLifeScheduler):
+            if self.life_manager is None:
+                raise Exception("Life manager is not init")
+            self.life_manager.register(obj)
 
     def _preparetion(self):
         """
@@ -160,14 +165,14 @@ class AgentCore(BaseModel):
         agent_data.after_init()
 
         # Add the agent to the agent list
-        if agent_data not in self.agent_list:
-            self.agent_list.append(agent_data)
+        if agent_data not in self.agent_manager:
+            self.agent_manager.append(agent_data)
         return agent_data
 
-    def start_agent_life(self, agent_data):
+    def start_agent_life(self, agent_data, new_thread):
         if agent_data.is_init is False:
             raise Exception("Agent is not init")
-        self.life_manager.life(agent_data)
+        self.life_manager.life(agent_data, new_thread)
         logger.info(f"{agent_data.name}'s life start.")
 
     def get_action(self, action_name: str = None):
@@ -177,7 +182,7 @@ class AgentCore(BaseModel):
         return self.llm_manager.get_llm(llm_type)
 
     def check_agent_exist(self, agent_name: str):
-        if any([agent_data.name == agent_name for agent_data in self.agent_list]):
+        if any([agent_data.name == agent_name for agent_data in self.agent_manager]):
             return True
         return False
 
@@ -189,6 +194,9 @@ class AgentCore(BaseModel):
 
     def report_message(self, message: str):
         self.monitor.add_message(message)
+
+    def remove_agent(self, agent_name):
+        self.agent_list = [agent_data for agent_data in self.agent_list if agent_data.name != agent_name]
 
 
 def get_agent_core():

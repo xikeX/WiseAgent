@@ -65,7 +65,7 @@ class MultiAgentEnvServer:
     def get_agent_list(self):
         rsp = []
         agent_code = get_agent_core()
-        for agent in agent_code.agent_list:
+        for agent in agent_code.agent_manager:
             if agent.name.lower() in self.agent_name_list:
                 rsp.append({"name": agent.name.lower(), "active": 1 if agent.is_activate else 0})
         return rsp

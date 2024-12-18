@@ -11,7 +11,7 @@ import re
 from functools import partial
 from typing import Any, List
 
-from wiseagent.action.action_annotation import action
+from wiseagent.action.action_decorator import action
 from wiseagent.action.base_action import BaseAction, BaseActionData
 from wiseagent.common.protocol_message import (
     STREAM_END_FLAG,

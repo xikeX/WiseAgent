@@ -41,11 +41,13 @@ class BaseLLM(BaseModel, ABC):
         for memory in memories:
             # If the message if from AI, the message.role is set to "assistant", otherwise it is set to "user".
             # If the message.role is not set, it is set to "user".
-            if memory.llm_handle_type is None:
+            if type(memory) is dict:
+                messages.append(memory)
+            elif memory.llm_handle_type is None:
                 logger.warning(f"Message {memory.content} does not have a llm_handle_type, set to 'user'")
                 messages.append({"role": "user", "content": memory.content})
             else:
-                messages.append({"role": memory.llm_handle_type.value, "content": memory.content})
+                messages.append({"role": memory.llm_handle_type, "content": memory.content})
 
         if user_prompt:
             messages.append({"role": "user", "content": user_prompt})

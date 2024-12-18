@@ -53,13 +53,20 @@ class BaseMonitor(BaseModel):
             if reporter not in self.reporter_list:
                 self.reporter_list.append(reporter)
 
-    def resgiter(self, reporter: BaseReporter):
+    def register(self, reporter: BaseReporter):
         """Register a reporter to the monitor.
         NOTE : The EnvReceiver is a Reporter of the agent system.
         Args:
             reporter (BaseReporter): The reporter to register."""
         if reporter not in self.reporter_list:
             self.reporter_list.append(reporter)
+
+    def unregister(self, reporter: BaseReporter):
+        """Remove a reporter from the monitor.
+        Args:
+            reporter (BaseReporter): The reporter to remove."""
+        if reporter in self.reporter_list:
+            self.reporter_list.remove(reporter)
 
     def add_message(self, msg: Message):
         if not isinstance(msg, Message):
@@ -89,8 +96,6 @@ class BaseMonitor(BaseModel):
                 is_solved = reporter.handle_stream_message(message)
             else:
                 is_solved = reporter.handle_message(message)
-            if is_solved:
-                break
 
     def run_report_thread(self) -> bool:
         # check if the thread is running

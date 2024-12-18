@@ -11,7 +11,7 @@ from wiseagent.common.protocol_message import (
 )
 from wiseagent.common.singleton import singleton
 from wiseagent.core.agent_core import get_agent_core
-from wiseagent.env.base.base import BaseEnvironment
+from wiseagent.env.base import BaseEnvironment
 
 ENV_DESCRIPTION = """
 The environment is a multi-agent environment, which includes {agent_name_list} and user (User).
@@ -42,8 +42,8 @@ class MultiAgentEnv(BaseEnvironment):
         agent_core = get_agent_core()
         if not agent_name_list:
             # If agent_name_list is empty, use all available agents
-            agent_name_list = [agent.name for agent in agent_core.agent_list]
-        agent_list = [agent for agent in agent_core.agent_list if agent.name in agent_name_list] or []
+            agent_name_list = [agent.name for agent in agent_core.agent_manager]
+        agent_list = [agent for agent in agent_core.agent_manager if agent.name in agent_name_list] or []
         self.agent_name_list = [agent.name for agent in agent_list] or []
         if agent_name_list and (
             un_exists_agent_list := [
@@ -74,7 +74,7 @@ class MultiAgentEnv(BaseEnvironment):
             return
 
         self.agent_name_list.append(agent_name)
-        agent_list = [agent for agent in agent_core.agent_list if agent.name in self.agent_name_list]
+        agent_list = [agent for agent in agent_core.agent_manager if agent.name in self.agent_name_list]
         for agent_data in agent_list:
             other_agent_name = [agent_name for agent_name in self.agent_name_list if agent_name != agent_data.name]
             env_description = ENV_DESCRIPTION.format(agent_name_list=",".join(other_agent_name))

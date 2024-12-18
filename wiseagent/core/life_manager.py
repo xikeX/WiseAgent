@@ -17,6 +17,7 @@ from wiseagent.common.global_config import GlobalConfig
 from wiseagent.common.logs import logger
 from wiseagent.common.singleton import singleton
 from wiseagent.core.agent import Agent
+from wiseagent.core.life_scheduler.base_life_scheduler import BaseLifeScheduler
 
 
 @singleton
@@ -53,7 +54,11 @@ class LifeManager(BaseModel):
             if life_scheduler.name not in self.life_scheduler_map:
                 self.life_scheduler_map[life_scheduler.name] = life_scheduler
 
-    def life(self, agent_data: Agent):
+    def register(self, life_scheduler: BaseLifeScheduler):
+        """Add a life scheduler to the life manager."""
+        self.life_scheduler_map[life_scheduler.name] = life_scheduler
+
+    def life(self, agent_data: Agent, new_thread):
         """Start a life of agent. Do not repeatly start the life of the agent.
 
         Args:
@@ -64,15 +69,18 @@ class LifeManager(BaseModel):
         """
         # Get the existing life thread for the agent, or create a new one.
         agent_data._is_alive = True
-        thread = self.agent_life_thread_map.get(agent_data.name, None) or threading.Thread(
-            target=self._life, args=(agent_data,)
-        )
-        # Check if the thread is already running.
-        if thread.is_alive():
-            raise Exception(f"Agent {agent_data.name} has already started life thread")
-        # Start the life thread for the agent.
-        self.agent_life_thread_map[agent_data.name] = thread
-        thread.start()
+        if new_thread:
+            thread = self.agent_life_thread_map.get(agent_data.name, None) or threading.Thread(
+                target=self._life, args=(agent_data,)
+            )
+            # Check if the thread is already running.
+            if thread.is_alive():
+                raise Exception(f"Agent {agent_data.name} has already started life thread")
+            # Start the life thread for the agent.
+            self.agent_life_thread_map[agent_data.name] = thread
+            thread.start()
+        else:
+            self._life(agent_data)
 
     def _life(self, agent_data: Agent):
         """The actual life cycle of the agent, managed by the appropriate life scheduler.

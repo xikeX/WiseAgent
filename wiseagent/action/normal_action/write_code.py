@@ -12,7 +12,7 @@ import webbrowser
 from functools import partial
 from typing import List
 
-from wiseagent.action.action_annotation import action
+from wiseagent.action.action_decorator import action
 from wiseagent.action.base_action import BaseAction
 from wiseagent.common.protocol_message import (
     STREAM_END_FLAG,
