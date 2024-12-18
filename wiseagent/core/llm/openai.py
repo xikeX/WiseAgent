@@ -6,8 +6,8 @@ LastEditTime: 2024-09-27 01:01:25
 Description: 
 """
 import os
-from pathlib import Path
 import threading
+from pathlib import Path
 from typing import Any, List
 
 from openai import AsyncStream, OpenAI
@@ -20,6 +20,7 @@ from wiseagent.core.llm.base_llm import BaseLLM
 
 DEBUGE = False
 llm_ask_times = 0
+
 
 @singleton
 class OpenAIClient(BaseLLM):
@@ -34,18 +35,26 @@ class OpenAIClient(BaseLLM):
     semaphore_size: int = 5
     verbose: bool = False
     count_tokens: bool = False
-    tokenizer:Any = None
+    tokenizer: Any = None
     total_input_tokens: int = 0
     total_output_tokens: int = 0
+
     def __init__(
-        self, api_key=None, base_url=None, model_name=None, semaphore_size=5, temperature=None, verbose=True,count_tokens=None
+        self,
+        api_key=None,
+        base_url=None,
+        model_name=None,
+        semaphore_size=5,
+        temperature=None,
+        verbose=True,
+        count_tokens=None,
     ) -> None:
         super().__init__()
         self.api_key = api_key or os.environ.get("LLM_API_KEY")
         self.base_url = base_url or os.environ.get("LLM_BASE_URL")
         self.openai_model_name = model_name or os.environ.get("LLM_MODEL_NAME")
-        self.temperature = temperature or os.environ.get("LLM_TEMPERATURE",0.5)
-        self.count_tokens = count_tokens or (os.environ.get("LLM_COUNT_TOKENS","False") == "True")
+        self.temperature = temperature or os.environ.get("LLM_TEMPERATURE", 0.5)
+        self.count_tokens = count_tokens or (os.environ.get("LLM_COUNT_TOKENS", "False") == "True")
         self.semaphore_size = semaphore_size
         self.semaphore = threading.Semaphore(self.semaphore_size)
         self.verbose = verbose or os.environ.get("LLM_VERBOSE") == "True"
@@ -56,6 +65,7 @@ class OpenAIClient(BaseLLM):
             api_key=api_key or self.api_key,
             base_url=base_url or self.base_url,
         )
+
     def llm_ask(
         self,
         memory: List[Message] = None,
@@ -90,7 +100,11 @@ class OpenAIClient(BaseLLM):
             memory = memory or []
             messages = self._build_messages(memory, system_prompt)
             response: AsyncStream[ChatCompletionChunk] = client.chat.completions.create(
-                model=model_name or self.openai_model_name, messages=messages, stream=True, temperature=self.temperature,max_tokens=max_tokens
+                model=model_name or self.openai_model_name,
+                messages=messages,
+                stream=True,
+                temperature=self.temperature,
+                max_tokens=max_tokens,
             )
             rsp = ""
             stream_message = ""
@@ -108,30 +122,31 @@ class OpenAIClient(BaseLLM):
             # tiktoken
             if self.count_tokens:
                 temp_model_name = model_name or self.openai_model_name
-                if temp_model_name in ['deepseek-chat','deepseek-coder']:
+                if temp_model_name in ["deepseek-chat", "deepseek-coder"]:
                     self.count_tokens_fn(messages, rsp)
                 pass
             if handle_stream_function:
                 handle_stream_function(STREAM_END_FLAG)
-            global DEBUGE,llm_ask_times
+            global DEBUGE, llm_ask_times
             if DEBUGE:
-                with open("llm.txt",'w',encoding='utf-8') as f:
-                    for index,message in enumerate(messages[:-1]):
-                        f.write(f'=============== {index+1} ==============\n' )
+                with open("llm.txt", "w", encoding="utf-8") as f:
+                    for index, message in enumerate(messages[:-1]):
+                        f.write(f"=============== {index+1} ==============\n")
                         f.write(f'role: {message["role"]}\n')
                         f.write(f'content: {message["content"]}\n')
-                    
-                    f.write(f'=============== prompt ==============\n' )
+
+                    f.write(f"=============== prompt ==============\n")
                     f.write(f'role: {messages[-1]["role"]}\n')
                     f.write(f'content: {messages[-1]["content"]}\n')
-                    f.write(f'=============== response ==============\n')
-                    f.write(f'content: {rsp}\n')
+                    f.write(f"=============== response ==============\n")
+                    f.write(f"content: {rsp}\n")
 
         return rsp
 
-    def count_tokens_fn(self, message , rsp: str):
+    def count_tokens_fn(self, message, rsp: str):
         """Count tokens for the given message and response."""
         from jinja2 import Template
+
         # Define the template
         template_str = """
         {% if not add_generation_prompt is defined %}{% set add_generation_prompt = false %}{% endif %}
@@ -146,28 +161,27 @@ class OpenAIClient(BaseLLM):
         # Define the template
         template = Template(template_str)
         # Define the data
-        data = {
-            'messages': message,
-            'bos_token': '[BOS]',
-            'eos_token': '[EOS]',
-            'add_generation_prompt': True
-        }
+        data = {"messages": message, "bos_token": "[BOS]", "eos_token": "[EOS]", "add_generation_prompt": True}
 
         # Render the template with the data
         rendered_text = template.render(data)
         # Cout the rendered text to the prompt
         if self.tokenizer is None:
             from transformers import AutoTokenizer
-            self.tokenizer = AutoTokenizer.from_pretrained( 
-                Path(__file__).parent/'deepseek-tokenizer', trust_remote_code=True
+
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                Path(__file__).parent / "deepseek-tokenizer", trust_remote_code=True
             )
         input_result = self.tokenizer.encode(rendered_text)
         output_result = self.tokenizer.encode(rsp)
         logger.info(f"input token number: {len(input_result)} output token number: {len(output_result)}")
         self.total_input_tokens += len(input_result)
         self.total_output_tokens += len(output_result)
+
     def reset_token_counter(self):
         self.total_input_tokens = 0
         self.total_output_tokens = 0
+
+
 def get_llm(api_key=None):
     return OpenAIClient(api_key=api_key)

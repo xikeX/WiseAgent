@@ -7,11 +7,12 @@ Description:
 """
 import importlib
 import os
+import platform
 import re
 import time
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
-import platform
+
 from pydantic import BaseModel
 
 from wiseagent.action.base_action import BaseAction
@@ -56,7 +57,9 @@ class ActionManager(BaseModel):
             ):
                 if deepth == 0 or any(exclude in str(module_path) for exclude in self.exclude_module_list):
                     continue
-                module = PACKAGE_NAME + ".".join(str(module_path)[:-3].split("\\"if platform.system() == "Windows" else "/")[-deepth - 1 :])
+                module = PACKAGE_NAME + ".".join(
+                    str(module_path)[:-3].split("\\" if platform.system() == "Windows" else "/")[-deepth - 1 :]
+                )
                 action_module_path_list.append(module)
             action_module_path_list = list(set(action_module_path_list))
         for action_module_path in action_module_path_list:
@@ -68,7 +71,7 @@ class ActionManager(BaseModel):
             for action_name in action_names:
                 self.action_module_path_map[action_name] = action_module_path
 
-    def add_action(self, action:Union[list,BaseAction]):
+    def add_action(self, action: Union[list, BaseAction]):
         if not isinstance(action, BaseAction) and not isinstance(action, list):
             raise ValueError("action must be a list of BaseAction or BaseAction")
         if isinstance(action, list):
@@ -76,7 +79,7 @@ class ActionManager(BaseModel):
                 if not isinstance(action_item, BaseAction):
                     raise ValueError("action must be a list of BaseAction or BaseAction")
                 self.action_map[action_item.action_name] = action_item
-            return 
+            return
         # else: action is BaseAction
         self.action_map[action.action_name] = action
 

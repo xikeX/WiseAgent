@@ -56,8 +56,6 @@ class EnvBaseReceiver(BaseReporter, ABC):
         return True
 
 
-
-
 class EnvBaseReporter(BaseModel):
     """
     Base class for environment reporter
@@ -75,7 +73,6 @@ class EnvBaseReporter(BaseModel):
             self.repoter.add_message(message)
 
 
-
 class BaseEnvironment(BaseModel):
     env_receiver: Any = None
     env_reporter: Any = None
@@ -85,7 +82,7 @@ class BaseEnvironment(BaseModel):
         self.env_receiver = EnvBaseReceiver(self.handle_message, self.handle_stream_message)
         self.env_reporter = EnvBaseReporter()
         pass
-        
+
     def env_report(self, message: Message, disable_warning=False):
         if not disable_warning:
             if message.llm_handle_type == LLMHandleType.AI:
@@ -95,7 +92,6 @@ class BaseEnvironment(BaseModel):
                 )
         self.env_reporter.add_message(message)
 
-    
     def handle_stream_message(self, message: Message) -> bool:
         """
         Handle stream message from agent system.
@@ -103,7 +99,6 @@ class BaseEnvironment(BaseModel):
         """
         raise NotImplementedError
 
-    
     def handle_message(self, message: Message) -> bool:
         """
         Handle message from agent system.
@@ -113,4 +108,3 @@ class BaseEnvironment(BaseModel):
 
     def close(self):
         self.env_receiver.close()
-        

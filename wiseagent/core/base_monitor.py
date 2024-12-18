@@ -60,13 +60,14 @@ class BaseMonitor(BaseModel):
             reporter (BaseReporter): The reporter to register."""
         if reporter not in self.reporter_list:
             self.reporter_list.append(reporter)
+
     def unregister(self, reporter: BaseReporter):
         """Remove a reporter from the monitor.
         Args:
             reporter (BaseReporter): The reporter to remove."""
         if reporter in self.reporter_list:
             self.reporter_list.remove(reporter)
-        
+
     def add_message(self, msg: Message):
         if not isinstance(msg, Message):
             logger.warning(f"Message {msg} is not a Message, and will be ignored")
