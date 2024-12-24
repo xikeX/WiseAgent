@@ -38,6 +38,12 @@ def repair_path(path: Union[Path, str]):
         path = Path(working_dir) / path
     return Path(path).resolve().absolute()
 
+def read_file(path: Union[Path, str], encoding="utf-8"):
+    path = Path(path)
+    path = repair_path(path)
+    with open(path, "r", encoding=encoding) as f:
+        return f.read()
+    
 
 def write_file(path: Union[Path, str], content, encoding="utf-8"):
     path = Path(path)

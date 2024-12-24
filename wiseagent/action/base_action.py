@@ -102,7 +102,6 @@ class BaseAction(BaseModel):
             system_prompt = agent_data.get_agent_system_prompt(
                 tools_description="", agent_instructions="", agent_example=""
             )
-        memory = memory + [UserMessage(content=prompt)]
         llm = agent_core.get_llm(agent_data.llm_config["llm_type"])
         if not llm:
             raise Exception("LLM not found")
