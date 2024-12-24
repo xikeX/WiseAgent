@@ -30,7 +30,7 @@ pip install -e .
 1. Configure the model file `config/env.yaml`
     ```yaml
     LLM:
-        type: Model type, example: "openai"
+        type: Model type, example: "OpenAI"
         api_key: "Model API key"
         base_url: "Model base URL"
         model_name: "Model name"

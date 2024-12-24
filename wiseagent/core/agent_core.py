@@ -169,7 +169,7 @@ class AgentCore(BaseModel):
             self.agent_manager.append(agent_data)
         return agent_data
 
-    def start_agent_life(self, agent_data, new_thread):
+    def start_agent_life(self, agent_data, new_thread=True):
         if agent_data.is_init is False:
             raise Exception("Agent is not init")
         self.life_manager.life(agent_data, new_thread)
