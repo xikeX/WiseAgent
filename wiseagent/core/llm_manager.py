@@ -42,13 +42,13 @@ class LLMManager(BaseModel):
     def get_llm(self, llm_type=None):
         if llm_type is None or llm_type not in self.llm_map:
             llm_type = os.environ.get("LLM_TYPE", None)
-            
+
             # update function
             if llm_type and llm_type.lower() == "openai":
                 llm_type = "OpenAI"
             else:
                 llm_type = llm_type
-            
+
             if llm_type is None or llm_type not in self.llm_map:
                 raise Exception(f"Default LLM {llm_type} not found")
             logger.info(f"Using default LLM {llm_type}")
