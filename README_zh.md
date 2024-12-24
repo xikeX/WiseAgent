@@ -29,7 +29,7 @@ pip install -e .
 1. 配置模型文件`config/env.yaml`
     ```yaml
     LLM:
-        type: 模型类型，示例："openai"
+        type: 模型类型，示例："OpenAI"
         api_key: "模型的API key" 
         base_url: "模型的base_url"
         model_name: "模型的名称"
@@ -41,8 +41,6 @@ pip install -e .
         api_key: "模型的API key" 
         base_url: "模型的base_url"
         model_name: "模型的名称"
-
-
     ```
 
 2. 以下是一个快速示例，帮助你入门, 这个脚本可以在`example/run_agent/run_engineer.py` 中找到。
