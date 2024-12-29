@@ -7,6 +7,7 @@ Description:
 """
 
 
+import json
 import re
 from pathlib import Path
 from typing import Union
@@ -39,13 +40,30 @@ def repair_path(path: Union[Path, str]):
     return Path(path).resolve().absolute()
 
 
+def read_file(path: Union[Path, str], encoding="utf-8"):
+    path = Path(path)
+    path = repair_path(path)
+    try:
+        content = ""
+        with open(path, "r", encoding=encoding) as f:
+            content = f.read()
+        if path.suffix == ".json":
+            content = json.loads(content)
+        return content
+    except Exception as e:
+        raise e
+
+
 def write_file(path: Union[Path, str], content, encoding="utf-8"):
     path = Path(path)
     path = repair_path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
         with open(path, "w", encoding=encoding) as f:
-            f.write(content)
+            if path.suffix == ".json":
+                json.dump(content, f, ensure_ascii=False, indent=4)
+            else:
+                f.write(content)
     except Exception as e:
         raise e
 

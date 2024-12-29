@@ -179,6 +179,9 @@ class AgentCore(BaseModel):
         return self.action_manager.get_action(action_name)
 
     def get_llm(self, llm_type: str = None):
+        if self.llm_manager is None:
+            logger.debug("llm manager is not init. init now...")
+            self._init_llm_manager(self.global_config)
         return self.llm_manager.get_llm(llm_type)
 
     def check_agent_exist(self, agent_name: str):

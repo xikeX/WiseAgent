@@ -90,7 +90,12 @@ class BaseAction(BaseModel):
     def llm_ask(
         self, prompt=None, memory: List[Message] = None, system_prompt: str = None, handle_stream_function=None
     ):
-        """Ask the LLM to generate a response to the given prompt."""
+        """Ask the LLM to generate a response to the given prompt.
+        Args:
+            prompt (str): The prompt to be sent to the LLM.
+            memory (List[Message]): The memory to be used by the LLM.
+            system_prompt (str): The system prompt to be used by the LLM.
+        """
         agent_data: Agent = get_current_agent_data()
         agent_core = get_agent_core()
         if memory is None:
@@ -113,6 +118,30 @@ class BaseAction(BaseModel):
             base_url=agent_data.llm_config.get("base_url", None),
             api_key=agent_data.llm_config.get("api_key", None),
             model_name=agent_data.llm_config.get("model_name", None),
+        )
+        return rsp
+
+    def pure_llm_ask(self, prompt):
+        """
+        Ask the LLM to generate a response to the given prompt.
+        Args:
+            prompt (str): The prompt to be sent to the LLM.
+        """
+        agent_core = get_agent_core()
+        agent_data: Agent = get_current_agent_data()
+        llm_type = agent_data.llm_config["llm_type"] if agent_data else None
+        base_url = agent_data.llm_config.get("base_url", None) if agent_data else None
+        api_key = agent_data.llm_config.get("api_key", None) if agent_data else None
+        model_name = agent_data.llm_config.get("model_name", None) if agent_data else None
+        llm = agent_core.get_llm(llm_type)
+        if not llm:
+            raise Exception("LLM not found")
+        memory = [{"role": "user", "content": prompt}]
+        rsp = llm.llm_ask(
+            memory=memory,
+            base_url=base_url,
+            api_key=api_key,
+            model_name=model_name,
         )
         return rsp
 

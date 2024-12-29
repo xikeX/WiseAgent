@@ -26,6 +26,19 @@ def parse_json_data(respond):
         return None, str(e)
 
 
+def parse_code_data(respond):
+    """get the code data from the respond"""
+    try:
+        pattern = re.compile(r"```(.*?)\n(.*?)\n```", re.DOTALL)
+        match = pattern.search(respond)
+        if not match:
+            raise ValueError("No code data found in the respond, please check does it has ```\n...\n```")
+        code_data = match.group(2)
+        return code_data, None
+    except Exception as e:
+        return None, str(e)
+
+
 def get_tag_content(xml_data, tag_name):
     """get the content of the tag
     If the tag contain property,get the property value
