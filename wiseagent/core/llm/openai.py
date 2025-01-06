@@ -129,7 +129,8 @@ class OpenAIClient(BaseLLM):
                 handle_stream_function(STREAM_END_FLAG)
             global DEBUGE, llm_ask_times
             if DEBUGE:
-                with open("llm.txt", "w", encoding="utf-8") as f:
+                os.makedirs("debug", exist_ok=True)
+                with open("debug/llm.txt", "w", encoding="utf-8") as f:
                     for index, message in enumerate(messages[:-1]):
                         f.write(f"=============== {index+1} ==============\n")
                         f.write(f'role: {message["role"]}\n')

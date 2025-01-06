@@ -77,8 +77,8 @@ def parse_command_xml_data(text):
         if match:
             xml_data = match.group(1)
         # parse xml data
-        action_list = re.compile(r"<action_list>(.*?)</action_list>", re.DOTALL).search(xml_data).group(1)
-        actions = re.compile(r"<action>(.*?)</action>", re.DOTALL).findall(action_list)
+        # action_list = re.compile(r"<action_list>(.*?)</action_list>", re.DOTALL).search(xml_data).group(1)
+        actions = re.compile(r"<action>(.*?)</action>", re.DOTALL).findall(text)
         for action in actions:
             action_name = get_tag_content(action, "action_name")["value"]
             action_method = get_tag_content(action, "action_method")["value"]

@@ -156,15 +156,6 @@ class BasePlanAction(BaseAction):
             Tuple: thoughts, command_list"""
         raise NotImplementedError("BaseActionData can not be plan")
 
-    @action()
-    def end(self):
-        """Use this action to stop. It is command when you do not recieve any useful command or do the final response.
-        User this action to stop loop."""
-        agent_data = get_current_agent_data()
-        agent_data.observe()
-        agent_data.sleep()
-        return ""
-
 
 class BaseActionData(BaseModel):
     meta_data: Dict[str, str] = []

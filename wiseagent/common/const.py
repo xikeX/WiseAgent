@@ -16,7 +16,7 @@ ROOT_PATH = Path(current_file_abs_path).parent.parent.parent.resolve()
 WISEAGENT_PACKAGE_PATH = ROOT_PATH / "wiseagent"
 ENV_CONFIG_PATH = ROOT_PATH / "config" / "env.yaml"
 CONFIG_PATH = ROOT_PATH / "config"
-WORKING_DIR = ROOT_PATH / "workspace"
+WORKING_DIR = Path(os.environ.get("WISEAGENT_WORKING_DIR", None)) or ROOT_PATH / "workspace"
 
 # May be used in the future
 DATA_PATH = ROOT_PATH / "data"

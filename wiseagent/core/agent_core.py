@@ -78,31 +78,36 @@ class AgentCore(BaseModel):
         self._preparetion()
         self._have_been_init = True
 
-    def _init_receiver(self, global_config):
+    def _init_receiver(self, global_config=None):
+        global_config = global_config or self.global_config
         from wiseagent.core.base_receiver import BaseReceiver
 
         self.receiver = BaseReceiver(global_config)
         self._prepare_function_list.append(self.receiver.run_receive_thread)
         self._close_function_list.append(self.receiver.close)
 
-    def _init_monitor(self, global_config):
+    def _init_monitor(self, global_config=None):
+        global_config = global_config or self.global_config
         from wiseagent.core.base_monitor import BaseMonitor
 
         self.monitor = BaseMonitor(global_config)
         self._prepare_function_list.append(self.monitor.run_report_thread)
         self._close_function_list.append(self.monitor.close)
 
-    def _init_life_manager(self, global_config):
+    def _init_life_manager(self, global_config=None):
+        global_config = global_config or self.global_config
         from wiseagent.core.life_manager import LifeManager
 
         self.life_manager = LifeManager(global_config)
 
-    def _init_action_manager(self, global_config):
+    def _init_action_manager(self, global_config=None):
+        global_config = global_config or self.global_config
         from wiseagent.action.action_manager import ActionManager
 
         self.action_manager = ActionManager(global_config)
 
-    def _init_llm_manager(self, global_config):
+    def _init_llm_manager(self, global_config=None):
+        global_config = global_config or self.global_config
         from wiseagent.core.llm_manager import LLMManager
 
         self.llm_manager = LLMManager(global_config)
@@ -181,8 +186,14 @@ class AgentCore(BaseModel):
     def get_llm(self, llm_type: str = None):
         if self.llm_manager is None:
             logger.debug("llm manager is not init. init now...")
-            self._init_llm_manager(self.global_config)
+            self._init_llm_manager()
         return self.llm_manager.get_llm(llm_type)
+
+    def get_agent(self, agent_name: str = None):
+        agent = next(filter(lambda agent_data: agent_data.name.lower() == agent_name.lower(), self.agent_manager), None)
+        if agent is None:
+            raise Exception(f"Agent {agent_name} is not exist")
+        return agent
 
     def check_agent_exist(self, agent_name: str):
         if any([agent_data.name == agent_name for agent_data in self.agent_manager]):
@@ -190,12 +201,21 @@ class AgentCore(BaseModel):
         return False
 
     def get_monitor(self):
+        if self.monitor is None:
+            logger.debug("monitor is not init. init now...")
+            self._init_monitor()
         return self.monitor
 
     def get_receiver(self):
+        if self.receiver is None:
+            logger.debug("receiver is not init. init now...")
+            self._init_receiver()
         return self.receiver
 
     def report_message(self, message: str):
+        if self.monitor is None:
+            logger.debug("monitor is not init. init now...")
+            self._init_monitor()
         self.monitor.add_message(message)
 
     def remove_agent(self, agent_name):

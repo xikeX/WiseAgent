@@ -38,8 +38,7 @@ class EnvBaseReceiver(BaseReporter, ABC):
         self._handle_stream_message = handle_stream_message
         # In here, will add the reporter to the reporter manager
         agent_core = get_agent_core()
-        if agent_core.get_monitor():
-            agent_core.get_monitor().register(self)
+        agent_core.get_monitor().register(self)
 
     def close(self):
         agent_core = get_agent_core()

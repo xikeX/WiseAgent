@@ -219,6 +219,15 @@ class MethodPlanAction(BasePlanAction):
         return f"create new task success. Task Id:{task_id}"
 
     @action()
+    def end(self):
+        """Use this action to stop. It is command when you do not recieve any useful command or do the final response.
+        User this action to stop loop."""
+        agent_data = get_current_agent_data()
+        agent_data.observe()
+        agent_data.sleep()
+        return ""
+
+    @action()
     def wait_for_task(self):
         """If there is no task, take this action and wait for a new task."""
         self.end()

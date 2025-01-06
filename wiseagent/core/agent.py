@@ -44,7 +44,7 @@ You are a helpful agent and follow is the profile of you.
 {agent_description}
 
 ## Current Environment
-{current_environment}
+{environment_description}
 
 ## Tools Description
 {tools_description}
@@ -53,6 +53,7 @@ You are a helpful agent and follow is the profile of you.
 {agent_example}
 
 ## Instructions
+Try your best to finish the task and follow the instructions.
 {agent_instructions}
 """.strip()
 
@@ -69,7 +70,7 @@ class Agent(BaseModel, YamlConfig):
     # Golbal System Prompt, This will be used in the agent's prompt.
     agent_system_prompt_template: str = AGENT_SYSTEM_PROMPT
     # The parameters in the agent_system_prompt_template
-    current_environment: str = ""
+    environment_description: str = ""
     tools_description: str = ""
     agent_instructions: str = ""
     agent_example: str = ""
@@ -145,7 +146,7 @@ class Agent(BaseModel, YamlConfig):
         self,
         name=None,
         description=None,
-        current_environment=None,
+        environment_description=None,
         tools_description=None,
         agent_instructions=None,
         agent_example=None,
@@ -154,7 +155,7 @@ class Agent(BaseModel, YamlConfig):
         return self.agent_system_prompt_template.format(
             agent_name=name or self.name,
             agent_description=description or self.description,
-            current_environment=current_environment or self.current_environment,
+            environment_description=environment_description or self.environment_description,
             tools_description=tools_description or self.tools_description,
             agent_instructions=agent_instructions or self.agent_instructions,
             agent_example=agent_example or self.agent_example,
@@ -229,7 +230,8 @@ class Agent(BaseModel, YamlConfig):
         try:
             with self.short_term_memory_lock:
                 # logger.info(f"Add message to short term memory: {message}")
-                logger.info(f"Receive message from {message.send_from}")
+                if message.send_from != message.send_to:
+                    logger.info(f"Receive message from {message.send_from} to {message.send_to}")
                 self.short_term_memory.append(message)
                 if from_env:
                     self.wake_up()
