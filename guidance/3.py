@@ -8,7 +8,7 @@ class MemoActionData(BaseActionData):
 
 class MemoAction(BaseAction):
     def init_agent(self, agent_data):
-        self.set_action_data(agent_data, action_data=MemoActionData())
+        self.set_action_data(agent_data, data=MemoActionData())
 
     @action()
     def record(self, content):

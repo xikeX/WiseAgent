@@ -106,7 +106,7 @@ pip install -e .
     if __name__ == "__main__":
         main()
     ```
-4. 启动智能体网页端和服务端
+4. 启动智能体网页端和服务端<br>
     服务端
     ```bash
     python wiseagent\server\server.py

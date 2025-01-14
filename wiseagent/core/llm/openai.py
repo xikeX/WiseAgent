@@ -119,6 +119,8 @@ class OpenAIClient(BaseLLM):
                         stream_message = handle_stream_function(stream_message)
                 rsp += chunk_message
                 # If the queue is not None: the response will be put into the queue.
+            if verbose:
+                    print("\n", end="")
             # tiktoken
             if self.count_tokens:
                 temp_model_name = model_name or self.openai_model_name
