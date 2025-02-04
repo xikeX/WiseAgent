@@ -3,6 +3,7 @@
 
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 
+[中文](https://github.com/xikeX/WiseAgent/blob/main/README_zh.md)
 ## Overview
 ![架构](assets/architecture.png)
 
