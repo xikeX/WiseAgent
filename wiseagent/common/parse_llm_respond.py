@@ -96,6 +96,10 @@ def parse_command_xml_data(text):
                 elif cur_arg["type"] == "float":
                     args_dict[cur_arg["name"]] = float(cur_arg["value"])
                 elif cur_arg["type"] == "bool" or cur_arg["type"] == "boolean":
+                    if cur_arg["value"] == "true":
+                        cur_arg["value"] = "True"
+                    elif cur_arg["value"] == "false":
+                        cur_arg["value"] = "False"
                     args_dict[cur_arg["name"]] = bool(cur_arg["value"])
                 else:
                     args_dict[cur_arg["name"]] = cur_arg["value"]
