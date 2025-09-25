@@ -15,7 +15,7 @@ def main():
     # 创建一个智能体
     mcp_agent = Agent.from_default(name="Bob", description="Bob is a engineer")
     # 注册一个动作/工具
-    mcp_agent.set_action_config("MCPAction",{"server_script_path":r"@executeautomation/playwright-mcp-server"})
+    mcp_agent.set_action_config("MCPAction", {"server_script_path": r"@executeautomation/playwright-mcp-server"})
     mcp_action = MCPAction()
     mcp_action.init_agent(mcp_agent)
 

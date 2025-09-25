@@ -1,10 +1,12 @@
-from wiseagent.core.agent import Agent
 from customer_actions.translate_actions import TranslateAction
+
+from wiseagent.core.agent import Agent
+
+
 def main():
-    
     translator = Agent.from_default(
         name="Alex",
-        action_list =[],
+        action_list=[],
     )
     translate_action = TranslateAction()
     translator.register_action(translate_action)
@@ -18,7 +20,7 @@ def main():
         translator.input(message)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 """

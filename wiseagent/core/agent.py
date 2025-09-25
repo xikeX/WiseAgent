@@ -6,9 +6,9 @@ LastEditTime: 2024-09-21 01:58:56
 Description: Agent core data, contain all the necessary data for agent. Include the agent's property, action_list, report_config, etc.
 """
 
-from datetime import datetime
 import threading
 from contextvars import ContextVar
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
@@ -31,7 +31,7 @@ from wiseagent.common.yaml_config import YamlConfig
 CURRENT_AGENT_DATA = ContextVar("current_agent_data", default=None)
 
 
-def get_current_agent_data()->"Agent":
+def get_current_agent_data() -> "Agent":
     return CURRENT_AGENT_DATA.get()
 
 
@@ -103,7 +103,7 @@ class Agent(BaseModel, YamlConfig):
     short_term_memory: List = []
     short_term_memory_lock: Any = None
     new_observe_message_number: int = 0
-    experience:dict = {} # the key is type + timestamp, the value is the memory
+    experience: dict = {}  # the key is type + timestamp, the value is the memory
 
     @classmethod
     def from_default(
@@ -162,6 +162,7 @@ class Agent(BaseModel, YamlConfig):
             agent_instructions=agent_instructions or self.agent_instructions,
             agent_example=agent_example or self.agent_example,
         )
+
     def get_environment_description(self):
         """Return the environment description."""
         return self.environment_description
@@ -259,8 +260,8 @@ class Agent(BaseModel, YamlConfig):
             if with_reset:
                 self.new_observe_message_number = 0
         return res
-    
-    def refresh_memory(self, summary_task_name:list=[]):
+
+    def refresh_memory(self, summary_task_name: list = []):
         """
         Start a new session and the short term memory will move to experience memory.
         The short term memory will be cleared.
@@ -272,13 +273,14 @@ class Agent(BaseModel, YamlConfig):
         if summary_task_name:
             # TODO: call the llm to classify the short term memory to one of the summary task name.
             pass
-        self.experience[f'{task_name}_{timestamp}'] =  self.short_term_memory
+        self.experience[f"{task_name}_{timestamp}"] = self.short_term_memory
         # TODO: add the short term memory to long term memory
 
         self.short_term_memory = []
+
     def get_experiment(self, task_name: str) -> dict:
-        return {key:value for key, value in self.experience.items() if task_name in key}
-    
+        return {key: value for key, value in self.experience.items() if task_name in key}
+
     def set_action_data(self, action_name: str, data: Any, recover=False):
         """
         This function is used to set the data of the action.

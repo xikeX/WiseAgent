@@ -233,6 +233,7 @@ class MethodPlanAction(BasePlanAction):
         for index, plan in enumerate(plan_list):
             res += f"{index}.({plan['status']}) {plan['description']}\n"
         return res
+
     @action()
     def end(self):
         """Use this action to stop. It is command when you do not recieve any useful command or do the final response.

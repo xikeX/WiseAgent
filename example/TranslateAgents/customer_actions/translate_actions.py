@@ -1,17 +1,21 @@
-
 import json
 import re
-from wiseagent.action.base_action import BaseAction, BaseActionData
+
 from wiseagent.action.action_decorator import action
-from wiseagent.common.protocol_message import CommunicationMessage
+from wiseagent.action.base_action import BaseAction, BaseActionData
 from wiseagent.common.logs import logger
+from wiseagent.common.protocol_message import CommunicationMessage
 from wiseagent.common.singleton import singleton
 from wiseagent.common.utils import read_file
+
+
 class TranslateActionData(BaseActionData):
     """
     translate_word_dictionary
     """
-    translate_word_dictionary:dict = {}
+
+    translate_word_dictionary: dict = {}
+
 
 ADDTIONAL_PROMPT = """
 # Original Text
@@ -67,14 +71,15 @@ you output should be in the following format:
 refined text
 </refine_translation>
 """
+
+
 @singleton
 class TranslateAction(BaseAction):
-
     def init_agent(self, agent):
         self.set_action_data(agent, TranslateActionData())
 
     @action()
-    def easy_translate(self,translated_text:str):
+    def easy_translate(self, translated_text: str):
         """
         This function is used report the translate result.
         Args:
@@ -87,7 +92,7 @@ class TranslateAction(BaseAction):
         return "The translated text has been reported."
 
     @action()
-    def hard_translate(self,file:str,original_language:str,target_language:str):
+    def hard_translate(self, file: str, original_language: str, target_language: str):
         """
         This function is used to translate the original text for difficult cases.
         Args:
@@ -98,17 +103,19 @@ class TranslateAction(BaseAction):
         original_text = read_file(file)
         translate_word_dictionary = self.get_action_data().translate_word_dictionary
         # 1. generate the translation word dictionary
-        self.generate_translation_word_dictionary(original_text,original_language,target_language,translate_word_dictionary)
+        self.generate_translation_word_dictionary(
+            original_text, original_language, target_language, translate_word_dictionary
+        )
         # 2. translate the text utill accessed by the judgement
         max_tries = 0
         translated_text = ""
         while max_tries < 3:
             prompt = TRANSLATION_PROMPT.format(
                 original_text=original_text,
-                translate_word_dictionary=json.dumps(translate_word_dictionary,ensure_ascii=False),
+                translate_word_dictionary=json.dumps(translate_word_dictionary, ensure_ascii=False),
                 target_language=target_language,
             )
-            respond = self.llm_ask(prompt,memory=[],system_prompt="")
+            respond = self.llm_ask(prompt, memory=[], system_prompt="")
 
             pattern = re.compile(r"<translation>(.*?)</translation>", re.DOTALL)
             match = pattern.search(respond)
@@ -121,7 +128,7 @@ class TranslateAction(BaseAction):
         refine_prompt = REFINEMENT_PROMPT.format(
             original_text=original_text,
             translated_text=translated_text,
-            translate_word_dictionary = translate_word_dictionary,
+            translate_word_dictionary=translate_word_dictionary,
             target_language=target_language,
         )
         respond = self.llm_ask(refine_prompt)
@@ -132,25 +139,29 @@ class TranslateAction(BaseAction):
             translated_text = match.group(1)
         return "translation successfully."
 
-
-    def generate_translation_word_dictionary(self,original_text:str,original_language:str,target_language:str,translate_word_dictionary:dict):
+    def generate_translation_word_dictionary(
+        self, original_text: str, original_language: str, target_language: str, translate_word_dictionary: dict
+    ):
         """Get the translation word dictionary."""
         addtional_prompt = ADDTIONAL_PROMPT.format(
             original_text=original_text,
-            translate_word_dictionary = json.dumps(translate_word_dictionary,ensure_ascii=False),
+            translate_word_dictionary=json.dumps(translate_word_dictionary, ensure_ascii=False),
             original_language=original_language,
-            target_language=target_language,    
+            target_language=target_language,
         )
         try:
-            respond = self.llm_ask(addtional_prompt,system_prompt="")
+            respond = self.llm_ask(addtional_prompt, system_prompt="")
             new_dict = json.loads(respond)
             translate_word_dictionary.update(new_dict)
         except Exception as e:
-            logger.debug(f"Error in generate_translation_word_dictionary: {e}.\nIgnore the translation word dictionary step.")
+            logger.debug(
+                f"Error in generate_translation_word_dictionary: {e}.\nIgnore the translation word dictionary step."
+            )
 
         return ""
+
     @action()
-    def add_translation_word_dictionary(self,original_word:str,target_word:str):
+    def add_translation_word_dictionary(self, original_word: str, target_word: str):
         """Add a translation word dictionary.
         Args:
             original_word (str): The original word.
@@ -160,7 +171,7 @@ class TranslateAction(BaseAction):
         translate_word_dictionary[original_word] = target_word
         return "Adding successful."
 
-    def remove_translation_word_dictionary(self,original_word:str):
+    def remove_translation_word_dictionary(self, original_word: str):
         """Remove a translation word dictionary.
         Args:
             original_word (str): The original_word word.
@@ -169,4 +180,3 @@ class TranslateAction(BaseAction):
         if original_word in translate_word_dictionary:
             del translate_word_dictionary[original_word]
         return "Removing successful."
-    

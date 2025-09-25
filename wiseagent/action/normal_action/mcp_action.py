@@ -1,24 +1,23 @@
 import asyncio
-from typing import Any, Dict, List, Optional
+import logging
+import threading
 from contextlib import AsyncExitStack
+from typing import Any, Dict, List, Optional
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-import threading
-import asyncio
-from typing import Optional
-import logging
 
 from wiseagent.action.action_decorator import action
 from wiseagent.action.base_action import BaseAction, BaseActionData
 from wiseagent.core.agent import get_current_agent_data
+
 logger = logging.getLogger(__name__)
+
 
 class MCPClient:
     def __init__(self):
         self.session: Optional[ClientSession] = None
         self.exit_stack = AsyncExitStack()
-
 
     async def connect_to_server(self, server_script_path: str):
         """
@@ -27,29 +26,16 @@ class MCPClient:
             server_script_path: the path of the server script
         """
         server_script_path = server_script_path.strip()
-        is_python = server_script_path.endswith('.py')
-        is_js = server_script_path.endswith('.js')
-        is_node = server_script_path.startswith('@')
+        is_python = server_script_path.endswith(".py")
+        is_js = server_script_path.endswith(".js")
+        is_node = server_script_path.startswith("@")
         assert is_python or is_js or is_node, "server_script_path must be a python script, a js script or a node script"
         if is_node:
-            server_params = StdioServerParameters(
-                command="npx",
-                args=["-y", server_script_path],
-                env=None
-            )
+            server_params = StdioServerParameters(command="npx", args=["-y", server_script_path], env=None)
         elif is_python:
-            server_params = StdioServerParameters(
-                command="python",
-                args=[server_script_path],
-                env=None
-            )
+            server_params = StdioServerParameters(command="python", args=[server_script_path], env=None)
         elif is_js:
-            server_params = StdioServerParameters(
-                command="node",
-                args=[server_script_path],
-                env=None
-            )
-        
+            server_params = StdioServerParameters(command="node", args=[server_script_path], env=None)
 
         stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))
         self.stdio, self.write = stdio_transport
@@ -60,6 +46,7 @@ class MCPClient:
         response = await self.session.list_tools()
         tools = response.tools
         logger.info(f"Available tools: {tools}")
+
     async def get_available_tools(self):
         return await self.session.list_tools()
 
@@ -67,11 +54,10 @@ class MCPClient:
         logger.info(f"Calling tool {tool_name} with args {tool_args}")
         result = await self.session.call_tool(tool_name, tool_args)
         return result.content[0].text
-    
+
     async def close(self):
         await self.stdio.close()
         await self.exit_stack.aclose()
-
 
 
 class SyncMCPClient:
@@ -95,22 +81,25 @@ class SyncMCPClient:
 
     def call_tool(self, tool_name: str, tool_args: dict):
         return self._run_coroutine(self.client.call_tool(tool_name, tool_args))
-    
+
     def get_available_tools(self):
         return self._run_coroutine(self.client.get_available_tools())
 
     def close(self):
         self._run_coroutine(self.client.close())
         self.loop.call_soon_threadsafe(self.loop.stop)
-    
+
+
 class MCPDataClass(BaseActionData):
     client: Any = None
     tool_list: List = []
+
     def __init__(self, server_script_path: Any):
         super().__init__()
         self.client = SyncMCPClient()
         self.client.connect_to_server(server_script_path)
         self.tool_list = self.client.get_available_tools().tools
+
 
 class MCPAction(BaseAction):
     "use MCP tools to process queries"
@@ -121,16 +110,17 @@ class MCPAction(BaseAction):
 
     def init_agent(self, agent_data):
         action_data_config = agent_data.get_action_config(self.action_name)
-        mcp_data = MCPDataClass(server_script_path = action_data_config['server_script_path'])
+        mcp_data = MCPDataClass(server_script_path=action_data_config["server_script_path"])
         agent_data.set_action_data(self.action_name, mcp_data)
         # 在初始化的时候告诉智能体有什么工具
-        if 'class_methods' not in self.action_description:
-            self.action_description['class_methods'] = {}
+        if "class_methods" not in self.action_description:
+            self.action_description["class_methods"] = {}
         for tool in mcp_data.tool_list:
-            self.action_description['class_methods'][tool.name]={
-                "description":tool.description,
-                "params":[f"{name}({p['type']})" for name,p in tool.inputSchema['properties'].items()]
+            self.action_description["class_methods"][tool.name] = {
+                "description": tool.description,
+                "params": [f"{name}({p['type']})" for name, p in tool.inputSchema["properties"].items()],
             }
+
     # @action()
     # def call_tool(self, tool_name: str, tool_args: dict):
     #     """Execute a tool with the given name and arguments
@@ -144,11 +134,14 @@ class MCPAction(BaseAction):
     def __getattr__(self, name):
         """when calling mcp methods, but the method is not defined in this class, then call the method in mcp_data_class"""
         agent_data = get_current_agent_data()
-        if name not in self.action_description['class_methods']:
+        if name not in self.action_description["class_methods"]:
             return f"Method {name} not found in MCPAction"
+
         def method(**kwargs):
             return agent_data.get_action_data(self.action_name).client.call_tool(name, kwargs)
+
         return method
+
     # @action()
     # def get_avalible_tools(self):
     #     """Get a list of available tools"""
@@ -156,6 +149,6 @@ class MCPAction(BaseAction):
     #     mcp_data:MCPDataClass = agent_data.get_action_data(self.action_name)
     #     return mcp_data.tool_list
 
+
 def get_action():
     return MCPAction()
-    
