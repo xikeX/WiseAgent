@@ -46,3 +46,6 @@ pynput
 
 # UniTest
 pytest
+
+# mcp
+fastapi-mcp

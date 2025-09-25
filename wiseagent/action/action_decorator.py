@@ -36,13 +36,12 @@ def get_dict_description(action) -> dict:
         for param in inspect.signature(method).parameters.values():
             if param.name == "self":
                 continue
-            param_info = {"param_name": param.name}
+            # param_info = {"param_name": param.name}
+            param_info = param.name
             if param.annotation != inspect.Parameter.empty:
-                param_info["param_type"] = param.annotation.__name__
+                param_info += f"({param.annotation.__name__})"
             method_info.setdefault("params", []).append(param_info)
         result["class_methods"][name] = method_info
-    if not result["class_methods"]:
-        return {}
     return result
 
 

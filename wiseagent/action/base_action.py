@@ -6,10 +6,11 @@ LastEditTime: 2024-09-23 21:55:50
 Description: 
 """
 
+import inspect
 import json
 from abc import abstractmethod
 from copy import deepcopy
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import multidict
 from pydantic import BaseModel
@@ -26,13 +27,28 @@ class BaseAction(BaseModel):
     action_name: str = ""  # the action name is the same with the action class
     action_type: str = ""
     action_description: str = None
-
-    def __init__(self):
+    default_action_data_class: Any = None
+    def __init__(self,default_action_data_class=None):
+        """
+        init the action.
+        Args:
+            default_action_data_class (type): the default action data class, if not set, init_agent will be ignored.
+        """
         super().__init__()
         # Get the desciprtion of the class
         self.action_name = self.__class__.__name__
         self.action_description = get_dict_description(self.__class__)
+        if default_action_data_class is not None:
+            assert len(inspect.signature(default_action_data_class.__init__).parameters) == 1, "default_action_data_class should not accept any parameters. if you want to accept parameters, you should override the init_agent method to meet your needs."
+        self.default_action_data_class = default_action_data_class
 
+    def init_agent(self,agent_data:"AgentData"):
+        """
+        init the agent data, if the default_action_data_class is set.
+        """
+        if self.default_action_data_class is not None:
+            agent_data.set_action_data(self.action_name,self.default_action_data_class())
+    
     def get_action_data(self, return_agent_data=False, action_name=None):
         """Return the current action data. If return_agent_data is True, also return the agent data"""
         agent_data = get_current_agent_data()

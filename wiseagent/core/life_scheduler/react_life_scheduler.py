@@ -69,9 +69,9 @@ class ReActLifeSchedule(BaseLifeScheduler):
             # Act/ReAct
             command: ActionCommand
             for command in command_list:
-                current_action = agent_core.get_action(command.action_name)
                 rsp = ""
                 try:
+                    current_action = agent_core.get_action(command.action_name)
                     if hasattr(current_action, command.action_method) and callable(
                         getattr(current_action, command.action_method)
                     ):
